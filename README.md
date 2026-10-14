@@ -1,0 +1,133 @@
+# Appearance Studio
+
+Appearance Studio is a professional desktop appearance center for GNOME on Linux. It is designed around a portable core, verified Theme Packs, bounded desktop writes, transactional rollback, and independent monitoring services.
+
+**Written by Dr. Emadoddin · نوشته شده توسط دکتر عمادالدین**
+
+Published by **Arclenor Technologies** — a platform-neutral software brand for Windows and Linux products. The current Appearance Studio implementation targets Linux/GNOME; Windows support is planned and is not claimed as shipped yet.
+
+## Release status
+
+Version **0.9.0** is a release candidate. The portable core, Theme Pack validation, transaction rollback, installer/uninstaller, and read-only monitoring model are testable independently of a live desktop session. A stable GNOME 50 live canary and soak remain required before declaring version 1.0 final.
+
+## Platform strategy
+
+Appearance Studio uses a shared Theme Pack and validation contract with platform-specific desktop backends. The current release candidate targets Linux/GNOME. Windows is an explicitly tracked platform target, but no Windows build is claimed as shipped yet. Machine-readable support status is bundled at `share/appearance-studio/platform-support.json`.
+
+## Core capabilities
+
+- Theme Pack discovery with path confinement and SHA-256 asset verification.
+- Transactional application of Light/Dark GTK identity, icons, cursor, sound, and wallpaper.
+- Write-if-changed desktop settings to minimize configuration churn.
+- Exact rollback when an appearance transaction fails.
+- Light/Dark synchronization with event coalescing and rate limiting.
+- Professional GTK/libadwaita interface with Themes, Packs, Diagnostics, and About pages.
+- Independent StatusNotifier system monitor for CPU, RAM, temperature, battery, network, and disk I/O.
+- Numeric Network/Disk throughput plus compact spark bars.
+- Privacy-bounded diagnostic export: no username, host, IP, MAC, serial, process list, interface name, disk device name, or private file paths.
+- Per-user installation without sudo.
+- Uninstall preserves user settings, state, and additional Theme Packs by default.
+
+## Requirements
+
+Recommended target:
+
+- Ubuntu 26.04 or another current GNOME desktop with GTK 4 and libadwaita.
+- Python 3.12 or newer.
+- `python3-gi` and GTK/libadwaita introspection packages for the graphical interface.
+- `python3-dbus` for the optional panel system monitor.
+- `gsettings` from GLib.
+- Yaru assets for the bundled Studio Default release-candidate pack on Ubuntu.
+
+The command-line core remains useful when the optional graphical or panel dependencies are not installed.
+
+## Install
+
+Run as the desktop user, not root:
+
+```bash
+python3 install.py
+```
+
+The safe default installs the application and services but does **not** start background services in the current graphical session.
+
+To install and explicitly activate the Light/Dark and system-monitor services:
+
+```bash
+python3 install.py --activate
+```
+
+For a non-mutating installation preview:
+
+```bash
+python3 install.py --dry-run
+```
+
+## Use
+
+Launch the graphical center:
+
+```bash
+appearance-studio
+```
+
+Useful command-line operations:
+
+```bash
+appearance-studio status
+appearance-studio diagnostics
+appearance-studio plan studio-default --mode dark
+appearance-studio apply studio-default --mode dark
+appearance-studio system-monitor-diagnostic
+```
+
+## Uninstall
+
+```bash
+python3 uninstall.py
+```
+
+This removes application-owned files and the bundled Studio Default pack while preserving user settings, state, and additional Theme Packs.
+
+To also remove user data:
+
+```bash
+python3 uninstall.py --purge-user-data
+```
+
+## Theme Pack format
+
+Theme Packs use manifest schema 2. Each pack declares:
+
+- stable pack and theme identifiers,
+- human-readable names and version,
+- a license identifier,
+- explicit public-distribution approval,
+- GTK, icon, cursor, and sound theme identities,
+- a relative wallpaper path and SHA-256,
+- theme color tokens.
+
+Pack paths are confined to the pack directory. Absolute paths and parent-directory traversal are rejected. Duplicate pack and theme identifiers are rejected.
+
+The bundled `studio-default` pack is original project artwork and contains no third-party wallpaper asset.
+
+## Safety model
+
+Appearance Studio intentionally avoids large bursts of desktop configuration writes. The public core:
+
+1. reads current values first,
+2. skips unchanged settings,
+3. serializes appearance changes with a user-level lock,
+4. applies a bounded set of owned settings,
+5. verifies the resulting state,
+6. restores the pre-state if verification fails.
+
+The Light/Dark monitor coalesces change bursts instead of running one full transaction per event. The system monitor samples `/proc` and `/sys` independently rather than running telemetry inside GNOME Shell.
+
+## Privacy
+
+Appearance Studio is local-first. The public core does not require an online account and does not include developer-machine paths, private project metadata, user names, host names, or machine-specific identifiers.
+
+## Licensing
+
+See `LICENSE` for Appearance Studio and the bundled original pack. If a future distribution includes third-party code or assets, their required notices are stored in `LICENSES/` and remain governed by their own licenses.

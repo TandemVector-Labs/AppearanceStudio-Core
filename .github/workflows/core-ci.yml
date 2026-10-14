@@ -1,0 +1,19 @@
+name: Appearance Studio Public Core CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verified-core:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check source and media manifest
+        run: python3 -B .github/scripts/release_audit.py
+      - name: Transaction and system monitor regressions
+        env:
+          PYTHONPATH: src
+        run: |
+          python3 -B tests/test_engine_transaction.py
+          python3 -B tests/test_system_monitor_model.py

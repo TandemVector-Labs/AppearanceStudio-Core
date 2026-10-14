@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Appearance Studio
+GenericName=Desktop Appearance Center
+Comment=Themes, wallpapers, cursors, icons, sound and desktop appearance
+Comment[fa]=مرکز حرفه‌ای تم، والپیپر، نشانگر، آیکن، صدا و ظاهر دسکتاپ
+Exec=appearance-studio
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;
+Keywords=theme;appearance;wallpaper;cursor;icons;sound;desktop;
+StartupNotify=true
+StartupWMClass=io.appearancestudio.Studio
+X-GNOME-UsesNotifications=false

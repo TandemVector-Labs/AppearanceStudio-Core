@@ -1,0 +1,29 @@
+{
+  "schema": 2,
+  "id": "studio-default",
+  "name": "Studio Default",
+  "version": "1.0.0",
+  "license": "LicenseRef-AppearanceStudio-Proprietary",
+  "themes": [
+    {
+      "id": "studio-default",
+      "name": "Studio Default",
+      "assets": {
+        "dark_theme": "Yaru-dark",
+        "light_theme": "Yaru",
+        "icon_theme": "Yaru",
+        "cursor_theme": "Yaru",
+        "sound_theme": "Yaru",
+        "wallpaper": "assets/studio-default.svg",
+        "wallpaper_sha256": "da043f0bdf7f8a935b1ba00fc7840e6c59e8314bea62b72fd03bebf2efa86178"
+      },
+      "colors": {
+        "accent": "#74d6c8",
+        "accent2": "#6a8cff",
+        "background": "#0b1020",
+        "foreground": "#f2f6ff"
+      }
+    }
+  ],
+  "public_distribution_approved": true
+}

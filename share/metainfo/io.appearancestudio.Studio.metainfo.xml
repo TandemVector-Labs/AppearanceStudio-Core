@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.appearancestudio.Studio</id>
+  <name>Appearance Studio</name>
+  <summary>Professional desktop appearance center for GNOME</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-AppearanceStudio-Proprietary</project_license>
+  <url type="homepage">https://github.com/Usefull-Skills/AppearanceStudio-Core</url>
+  <developer id="io.arclenor">
+    <name>Arclenor Technologies</name>
+  </developer>
+  <description>
+    <p>Appearance Studio manages desktop themes, wallpapers, cursors, icons, sound and theme packs through a bounded transactional engine.</p>
+    <p>Written by Dr. Emadoddin.</p>
+  </description>
+  <launchable type="desktop-id">io.appearancestudio.Studio.desktop</launchable>
+  <provides><binary>appearance-studio</binary></provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.9.0" date="2026-10-07">
+      <description><p>Public-core release candidate with portable paths, verified theme packs and transactional appearance changes.</p></description>
+    </release>
+  </releases>
+</component>

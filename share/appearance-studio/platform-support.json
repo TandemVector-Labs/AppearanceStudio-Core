@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "product": "Appearance Studio",
+  "publisher": "Arclenor Technologies",
+  "architecture": "shared-theme-pack-contract-with-platform-specific-desktop-backends",
+  "platforms": {
+    "linux": {
+      "status": "release-candidate",
+      "current_backend": "GNOME / GSettings",
+      "ui": "GTK 4 + libadwaita",
+      "service_model": "systemd --user",
+      "tested_target": "Ubuntu 26 / GNOME 50",
+      "final_acceptance": "OPEN_FRESH_SESSION_CANARY_AND_SOAK"
+    },
+    "windows": {
+      "status": "planned-architecture-ready-not-shipped",
+      "detected_reference_environment": {
+        "architecture": "win-x64",
+        "python": "3.14.7",
+        "dotnet_sdk": "10.0.401",
+        "windows_app_runtime": "installed"
+      },
+      "intended_backend": "Windows Personalization APIs / per-user registry / supported shell APIs",
+      "ui": "Windows App SDK / WinUI candidate",
+      "final_acceptance": "NOT_IMPLEMENTED"
+    }
+  },
+  "common_contracts": [
+    "Theme Pack schema v2",
+    "asset SHA-256 verification",
+    "path confinement",
+    "transaction planning",
+    "portable metadata"
+  ],
+  "product_final": false
+}
