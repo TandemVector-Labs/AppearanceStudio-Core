@@ -25,7 +25,7 @@ assert pack["public_distribution_approved"] is True and len(pack["themes"]) == 1
 # with the repository's active manifest without changing the historical ZIP.
 import zipfile
 
-release = doc["latest_organization_branded_source_archive"]
+release = doc["previous_organization_branded_source_archive"]
 assert release["unsigned"] is True and release["full_product_final"] is False
 assert release["original_rc1_tag_archive_unchanged"] is True
 zip_path = root / release["path"]
