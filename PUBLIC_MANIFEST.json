@@ -14,9 +14,9 @@
       "sha256": "09d501bfdc99c0c4522db8c803ce7b524a7691cbfd5aba4dcac61d81ee19f9e8"
     },
     {
-      "bytes": 7104,
+      "bytes": 8662,
       "path": "README.md",
-      "sha256": "2dd3476f300df52c6d451231d6b90edae88502af8ecd04fc7ee7d226521b291d"
+      "sha256": "47d918e36a7c6a21896cf2b19544754c376e8033cd73eb0065f63653ef6d13d5"
     },
     {
       "bytes": 6,
@@ -24,9 +24,9 @@
       "sha256": "9d8c94f1ad3ea96b1e2ac4914fda4cb93c76b4a3e0d8cc6dd8976d6c0b227d15"
     },
     {
-      "bytes": 7144,
+      "bytes": 25393,
       "path": "install.py",
-      "sha256": "0a61f013fb5db78cad4d9e567e7421a024a53fff0e55929f40f78082325906f3"
+      "sha256": "3f0def28617fc9f118056fb39bb3ca256926fcfaf43971d9ba4af158c20f24fb"
     },
     {
       "bytes": 1360,
@@ -119,9 +119,9 @@
       "sha256": "356d0f263a6bfc9dd575f73d87747f519c69b8d7ae423677ee5898be55f03ea0"
     },
     {
-      "bytes": 8144,
+      "bytes": 8568,
       "path": "src/appearance_studio/ui.py",
-      "sha256": "65f3b30870cb87af81482daa0f400bff1bec02acf4f7ca987428b2dd2aa57e01"
+      "sha256": "20d339d9a31a2688003fe0e4a0633a884340cca01c633ffae81edeab59f772e7"
     },
     {
       "bytes": 2553,
@@ -134,9 +134,9 @@
       "sha256": "c5fcd4e9bd8640b12d6d98a11bed3ca61488f257b669246ac4100bd542ffb707"
     },
     {
-      "bytes": 4614,
+      "bytes": 7438,
       "path": "uninstall.py",
-      "sha256": "ab56f29c86ad7cf1309cbbbacbc270df39c040f7c5c22c1fd3efbfba49aedf62"
+      "sha256": "dc11473b8b59ea533d7210912ef68d0e08a2223e663afc962902d77d7b9bf29d"
     }
   ],
   "full_product_final": false,

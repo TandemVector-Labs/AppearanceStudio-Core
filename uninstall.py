@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, os, shutil, subprocess
+import argparse, fcntl, json, os, shutil, subprocess
 from pathlib import Path
 
 def xdg(name, fallback):
@@ -10,6 +10,25 @@ def remove_owned(path):
     if not path.exists() and not path.is_symlink():return
     if path.is_dir() and not path.is_symlink():shutil.rmtree(path)
     else:path.unlink()
+
+def refuse_foreign_manager_units(expected: dict) -> None:
+    """Fail closed before stopping any similarly named non-Core service."""
+    for key in ("service", "system_monitor_service"):
+        path = expected[key]
+        try:
+            response = subprocess.run(
+                ["systemctl", "--user", "show", path.name,
+                 "--property=FragmentPath", "--value"],
+                capture_output=True, text=True, timeout=8)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise SystemExit("Unable to verify owned service manager units.") from exc
+        if response.returncode:
+            raise SystemExit("Unable to verify owned service manager units.")
+        fragment = response.stdout.strip()
+        if fragment and fragment != str(path):
+            raise SystemExit("Foreign user-manager unit collision: " + path.name +
+                             " would affect a different installation.")
+
 
 def main():
     ap=argparse.ArgumentParser(description="Uninstall Appearance Studio application files")
@@ -21,70 +40,99 @@ def main():
     config=xdg("XDG_CONFIG_HOME",".config")
     state=xdg("XDG_STATE_HOME",".local/state")
     manifest_path=state/"appearance-studio/install-manifest.json"
+    if not manifest_path.is_absolute() or any(parent.is_symlink() for parent in manifest_path.parents):
+        raise SystemExit("Unsafe XDG state path: refusing uninstall.")
     if manifest_path.is_symlink() or not manifest_path.is_file() or manifest_path.stat().st_size>32768:
         raise SystemExit("No owned installation manifest: refusing unrelated deletion.")
-    receipt=json.loads(manifest_path.read_text(encoding="utf-8"))
-    app=data/"appearance-studio"
-    expected={
-        "python":app/"python", "builtin_pack":app/"packs/studio-default",
-        "version":app/"VERSION", "licenses":app/"LICENSES",
-        "wrapper":Path.home()/".local/bin/appearance-studio",
-        "desktop":data/"applications/io.appearancestudio.Studio.desktop",
-        "metainfo":data/"metainfo/io.appearancestudio.Studio.metainfo.xml",
-        "service":config/"systemd/user/appearance-studio-theme-monitor.service",
-        "system_monitor_service":config/"systemd/user/appearance-studio-system-monitor.service",
-    }
-    version=(Path(__file__).resolve().parent/"VERSION").read_text().strip()
-    if (receipt.get("schema")!=1 or receipt.get("version")!=version
-            or receipt.get("owned_paths")!={k:str(v) for k,v in expected.items()}
-            or not expected["version"].is_file()
-            or expected["version"].read_text().strip()!=version):
-        raise SystemExit("Installed path/version mismatch: refusing unsafe uninstall.")
-    if any(p.is_symlink() for p in expected.values()):
-        raise SystemExit("Owned target is a symlink: refusing unsafe uninstall.")
-    activated=receipt.get("activate_requested") is True
-    if activated:
-        source=Path(__file__).resolve().parent/"share/systemd/user"
-        installed=config/"systemd/user"
-        for name in ("appearance-studio-theme-monitor.service",
-                     "appearance-studio-system-monitor.service"):
-            src=source/name
-            dest=installed/name
-            if not src.is_file() or not dest.is_file() or src.read_bytes()!=dest.read_bytes():
-                raise SystemExit("Activated unit changed: refusing to stop unrelated services.")
-    if activated and shutil.which("systemctl"):
-        completed=subprocess.run(["systemctl","--user","disable","--now",
-            "appearance-studio-theme-monitor.service",
-            "appearance-studio-system-monitor.service"],
-            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-        if completed.returncode:
-            raise SystemExit("Could not stop owned services; refusing partial uninstall.")
-    paths=[
-        Path.home()/".local/bin/appearance-studio",
-        data/"applications/io.appearancestudio.Studio.desktop",
-        data/"metainfo/io.appearancestudio.Studio.metainfo.xml",
-        config/"systemd/user/appearance-studio-theme-monitor.service",
-        config/"systemd/user/appearance-studio-system-monitor.service",
-        data/"appearance-studio/python",
-        data/"appearance-studio/packs/studio-default",
-        data/"appearance-studio/VERSION",
-        data/"appearance-studio/LICENSES",
-    ]
-    for path in paths:remove_owned(path)
-    if ns.purge_user_data:
-        remove_owned(config/"appearance-studio")
-        remove_owned(state/"appearance-studio")
-        remove_owned(data/"appearance-studio/packs")
-    else:
-        remove_owned(manifest_path)
-    app=data/"appearance-studio"
-    try:app.rmdir()
-    except OSError:pass
-    if activated and shutil.which("systemctl"):
-        subprocess.run(["systemctl","--user","daemon-reload"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-    print("Appearance Studio application files removed.")
-    if not ns.purge_user_data:print("User settings, state and additional theme packs were preserved.")
-    return 0
+    recovery_root=state/"appearance-studio"
+    lock=recovery_root/".core-install.lock"
+    if lock.is_symlink():
+        raise SystemExit("Linked install lock refused.")
+    with lock.open("a+") as lock_file:
+        fcntl.flock(lock_file.fileno(),fcntl.LOCK_EX)
+        pending=recovery_root/"core-install-pending"
+        preparing=recovery_root/".core-install-preparing"
+        if (pending.exists() or pending.is_symlink()
+                or preparing.exists() or preparing.is_symlink()):
+            raise SystemExit("Unfinished Core install/recovery: refusing uninstall until resolved.")
+        receipt=json.loads(manifest_path.read_text(encoding="utf-8"))
+        app=data/"appearance-studio"
+        expected={
+            "python":app/"python", "builtin_pack":app/"packs/studio-default",
+            "version":app/"VERSION", "licenses":app/"LICENSES",
+            "wrapper":Path.home()/".local/bin/appearance-studio",
+            "desktop":data/"applications/io.appearancestudio.Studio.desktop",
+            "metainfo":data/"metainfo/io.appearancestudio.Studio.metainfo.xml",
+            "service":config/"systemd/user/appearance-studio-theme-monitor.service",
+            "system_monitor_service":config/"systemd/user/appearance-studio-system-monitor.service",
+        }
+        version=(Path(__file__).resolve().parent/"VERSION").read_text().strip()
+        if (receipt.get("schema")!=1 or receipt.get("version")!=version
+                or receipt.get("owned_paths")!={k:str(v) for k,v in expected.items()}
+                or not expected["version"].is_file()
+                or expected["version"].read_text().strip()!=version):
+            raise SystemExit("Installed path/version mismatch: refusing unsafe uninstall.")
+        owned_and_optional = list(expected.values())
+        if ns.purge_user_data:
+            owned_and_optional.extend([
+                config/"appearance-studio", state/"appearance-studio",
+                data/"appearance-studio/packs"
+            ])
+        if any(not p.is_absolute() or p.is_symlink()
+               or any(parent.is_symlink() for parent in p.parents)
+               for p in owned_and_optional):
+            raise SystemExit("Owned target or parent is linked/unsafe: refusing uninstall.")
+        activated=receipt.get("activate_requested") is True
+        if activated:
+            source=Path(__file__).resolve().parent/"share/systemd/user"
+            installed=config/"systemd/user"
+            for name in ("appearance-studio-theme-monitor.service",
+                         "appearance-studio-system-monitor.service"):
+                src=source/name
+                dest=installed/name
+                if not src.is_file() or not dest.is_file() or src.read_bytes()!=dest.read_bytes():
+                    raise SystemExit("Activated unit changed: refusing to stop unrelated services.")
+        if activated and not shutil.which("systemctl"):
+            raise SystemExit("Cannot locate systemctl to stop activated owned services.")
+        if activated:
+            refuse_foreign_manager_units(expected)
+            completed=subprocess.run(["systemctl","--user","disable","--now",
+                "appearance-studio-theme-monitor.service",
+                "appearance-studio-system-monitor.service"],
+                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            if completed.returncode:
+                raise SystemExit("Could not stop owned services; refusing partial uninstall.")
+        paths=[
+            Path.home()/".local/bin/appearance-studio",
+            data/"applications/io.appearancestudio.Studio.desktop",
+            data/"metainfo/io.appearancestudio.Studio.metainfo.xml",
+            config/"systemd/user/appearance-studio-theme-monitor.service",
+            config/"systemd/user/appearance-studio-system-monitor.service",
+            data/"appearance-studio/python",
+            data/"appearance-studio/packs/studio-default",
+            data/"appearance-studio/VERSION",
+            data/"appearance-studio/LICENSES",
+        ]
+        for path in paths:remove_owned(path)
+        if ns.purge_user_data:
+            remove_owned(config/"appearance-studio")
+            # Keep the open lock inode and its parent stable until lock release.
+            # Removing this directory while flock() is held lets a concurrent
+            # installer create and lock a different inode at the same path.
+            for child in sorted(recovery_root.iterdir()):
+                if child != lock:
+                    remove_owned(child)
+            remove_owned(data/"appearance-studio/packs")
+        else:
+            remove_owned(manifest_path)
+        app=data/"appearance-studio"
+        try:app.rmdir()
+        except OSError:pass
+        if activated and shutil.which("systemctl"):
+            subprocess.run(["systemctl","--user","daemon-reload"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        print("Appearance Studio application files removed.")
+        if not ns.purge_user_data:print("User settings, state and additional theme packs were preserved.")
+        return 0
 
 if __name__=="__main__":
     raise SystemExit(main())

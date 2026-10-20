@@ -17,3 +17,55 @@ jobs:
         run: |
           python3 -B tests/test_engine_transaction.py
           python3 -B tests/test_system_monitor_model.py
+          python3 -B tests/test_install_preflight.py
+          python3 -B tests/test_upgrade_from_published_core.py
+          python3 -B tests/test_uninstall_safety.py
+          python3 -B tests/test_systemd_units_offline.py
+          python3 -B tests/test_systemd_unit_ownership.py
+      - name: Build and verify reproducible unsigned PR canary
+        shell: bash
+        run: |
+          python3 -B .github/scripts/build_candidate.py \
+            --output-dir "$RUNNER_TEMP/appearance-core-candidate" --smoke-test
+      - name: Retain PR canary for review, not as a GitHub Release
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: appearance-core-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/appearance-core-candidate/
+          if-no-files-found: error
+          retention-days: 7
+  gtk-broadway-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GTK4 Broadway smoke-test prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libgtk-4-bin libglib2.0-bin gsettings-desktop-schemas python3-dbus dbus-daemon
+      - name: Construct and render UI on isolated localhost Broadway
+        run: /usr/bin/python3 -B tests/test_ui_broadway.py
+      - name: Apply real GNOME keyfile Dark/Light and verify rollback in temporary home
+        run: /usr/bin/python3 -B tests/test_gsettings_keyfile.py
+      - name: Start and terminate both Core monitor processes on private D-Bus
+        run: /usr/bin/python3 -B tests/test_service_processes_private_bus.py
+  clean-user-systemd:
+    # Privileged fixture creation is permitted only on a disposable GitHub VM
+    # and never for untrusted fork PR source; no owner machine is touched.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install headless Core monitor dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            python3-gi python3-dbus gir1.2-gtk-4.0 gir1.2-adw-1 \
+            gsettings-desktop-schemas dbus-user-session
+      - name: Exercise official Core units in a fresh real user manager
+        shell: bash
+        run: bash .github/scripts/test_clean_user_systemd.sh
