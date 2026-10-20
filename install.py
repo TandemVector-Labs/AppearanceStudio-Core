@@ -319,9 +319,36 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
     return True
 
 
+def clear_completed_install(state: Path) -> None:
+    """Clean commit artifacts without ever treating a successful install as pending."""
+    completed = state / "core-install-completed"
+    if completed.is_symlink():
+        raise RuntimeError("linked completed transaction refused")
+    if not completed.exists():
+        return
+    if not completed.is_dir():
+        raise RuntimeError("invalid completed transaction")
+    marker = completed / "commit.complete"
+    if marker.is_symlink():
+        raise RuntimeError("linked completed marker refused")
+    if marker.is_file() and marker.read_text(encoding="utf-8") == "committed\n":
+        for child in list(completed.iterdir()):
+            if child != marker:
+                _remove_target(child)
+        marker.unlink()  # delete marker last: interrupted cleanup is distinguishable
+        completed.rmdir()
+    elif not any(completed.iterdir()):
+        completed.rmdir()  # interruption immediately before rmdir
+    else:
+        raise RuntimeError("unrecognized completed transaction; refusing removal")
+
+
 def finish_install_transaction(pending: Path) -> None:
+    completed = pending.with_name("core-install-completed")
+    clear_completed_install(pending.parent)
     atomic_text(pending / "commit.complete", "committed\n", 0o600)
-    shutil.rmtree(pending)
+    os.replace(pending, completed)  # atomic ownership transition at commit
+    clear_completed_install(pending.parent)
 
 def main():
     ap=argparse.ArgumentParser(description="Install Appearance Studio for the current user")
@@ -362,11 +389,17 @@ def main():
         print(json.dumps({k:str(v) for k,v in targets.items()},indent=2))
         return 0
 
+    if (not recovery_state.is_absolute() or recovery_state.is_symlink()
+            or any(parent.is_symlink() for parent in recovery_state.parents)):
+        raise SystemExit("Unsafe XDG state path: refusing installation.")
     recovery_state.mkdir(parents=True, exist_ok=True)
     lock = recovery_state/".core-install.lock"
+    if lock.is_symlink():
+        raise SystemExit("Linked Core install lock refused.")
     with lock.open("a+") as lock_file:
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
         try:
+            clear_completed_install(recovery_state)
             slots = _transaction_paths(targets, manifest_path)
             if ns.recover:
                 restored = recover_install_transaction(slots, recovery_state)
