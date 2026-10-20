@@ -125,7 +125,7 @@ def run():
             fakebin = root / "fakebin"
             fakebin.mkdir()
             sysctl = fakebin / "systemctl"
-            sysctl.write_text('#!/bin/sh\\nprintf "%s\\\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\\n',
+            sysctl.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n',
                               encoding="utf-8")
             sysctl.chmod(0o755)
             service_log = root / "systemctl.log"
