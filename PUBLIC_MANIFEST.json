@@ -134,9 +134,9 @@
       "sha256": "c5fcd4e9bd8640b12d6d98a11bed3ca61488f257b669246ac4100bd542ffb707"
     },
     {
-      "bytes": 6125,
+      "bytes": 6440,
       "path": "uninstall.py",
-      "sha256": "f5be742a61b54be59d84ac69848a0c838c7e7fbe3fbf0a5048303d5e2d22e7f3"
+      "sha256": "112f4a4f65b958f047e9cbf1dbac158081ef6de2b0f4ec3d8388c2ebddee049f"
     }
   ],
   "full_product_final": false,
