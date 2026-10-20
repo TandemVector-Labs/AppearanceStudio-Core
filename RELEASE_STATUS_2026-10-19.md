@@ -15,3 +15,9 @@ Download the release ZIP, extract it, and follow its `README.md` and `install.py
 **No cryptographic signing certificate is asserted.** Download integrity may be verified using the published SHA-256 checksum; a checksum is not an identity signature.
 
 The full private development repository stays separate. Project Ultimate remains under active development; this Core release is the usable early delivery.
+
+## Updated organization-branded source package (2026-10-20)
+
+The public main branch now offers [AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip) built from commit 873c08232aba0ef8e780bc961a652b0ddf3a991c with publisher **TandemVector-Labs**, original author **Aliakbar Emadoddin**, one public original Theme Pack named **Appearance Studio**, and no digital signing requirement.
+
+SHA-256: c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869. The historical release tag and its original ZIP were not replaced; this package has its own checksum. Its install/uninstall, public manifest, transaction and monitor tests passed in an isolated user-local XDG environment. The broader Ultimate, Windows and GNOME cinematic acceptance remain open; no third-party wallpapers are redistributed.

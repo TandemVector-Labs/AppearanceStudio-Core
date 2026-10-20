@@ -14,9 +14,9 @@
       "sha256": "09d501bfdc99c0c4522db8c803ce7b524a7691cbfd5aba4dcac61d81ee19f9e8"
     },
     {
-      "bytes": 5303,
+      "bytes": 6447,
       "path": "README.md",
-      "sha256": "df34b0360b0d49076d7652707f18b4f6a305c8f06e30585d96a6f4f0a6485026"
+      "sha256": "3e556a35b80236d069692087fe0c70883a3773c4f49412a9c45dcb9c70fdb821"
     },
     {
       "bytes": 6,
@@ -140,6 +140,16 @@
     }
   ],
   "full_product_final": false,
+  "latest_organization_branded_source_archive": {
+    "bytes": 46821,
+    "contains_copyrighted_franchise_media": false,
+    "full_product_final": false,
+    "original_rc1_tag_archive_unchanged": true,
+    "path": "downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip",
+    "sha256": "c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869",
+    "source_commit": "873c08232aba0ef8e780bc961a652b0ddf3a991c",
+    "unsigned": true
+  },
   "media_public_approval_basis": "Bundled studio-default manifest public_distribution_approved=true",
   "original_author": "Aliakbar Emadoddin",
   "platform": "Linux GNOME/GTK",

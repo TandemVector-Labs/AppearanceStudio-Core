@@ -41,6 +41,16 @@ Recommended target:
 
 The command-line core remains useful when the optional graphical or panel dependencies are not installed.
 
+## Latest unsigned organization-branded Core source package
+
+The installable **Linux Core 0.9.0 release candidate** from public source commit [873c08232aba](https://github.com/TandemVector-Labs/AppearanceStudio-Core/commit/873c08232aba0ef8e780bc961a652b0ddf3a991c) is available as [AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip). It is not the unfinished Ultimate edition.
+
+**Publisher:** TandemVector-Labs (GitHub organization). **Original author:** Aliakbar Emadoddin (علی‌اکبر عمادالدین). **Code signing:** not applied; the checksum is an integrity check, not an author signature.
+
+**SHA-256:** c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869 — the matching [checksum file](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip.sha256) is supplied.
+
+The historical v0.9.0-rc1 tagged GitHub Release remains unchanged; its ZIP differs from this subsequent organization-branded source package. Do not overwrite an existing customized or Ultimate installation without first reviewing and preserving its data.
+
 ## Install
 
 Run as the desktop user, not root:
