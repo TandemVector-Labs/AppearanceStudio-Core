@@ -8,7 +8,7 @@ Published under **TandemVector-Labs** on GitHub for Linux and future Windows pro
 
 ## Release status
 
-Version **0.9.0** is a release candidate. The portable core, Theme Pack validation, transaction rollback, installer/uninstaller, and read-only monitoring model are testable independently of a live desktop session. A stable GNOME 50 live canary and soak remain required before declaring version 1.0 final.
+Version **0.9.1** is a release candidate. The portable core, Theme Pack validation, transaction rollback, installer/uninstaller, and read-only monitoring model are testable independently of a live desktop session. A stable GNOME 50 live canary and soak remain required before declaring version 1.0 final.
 
 ## Platform strategy
 
