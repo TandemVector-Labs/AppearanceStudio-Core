@@ -21,6 +21,7 @@ jobs:
           python3 -B tests/test_upgrade_from_published_core.py
           python3 -B tests/test_uninstall_safety.py
           python3 -B tests/test_systemd_units_offline.py
+          python3 -B tests/test_systemd_unit_ownership.py
       - name: Build and verify reproducible unsigned PR canary
         shell: bash
         run: |
