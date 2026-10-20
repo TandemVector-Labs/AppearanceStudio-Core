@@ -12,6 +12,15 @@ from .diagnostics import report as diagnostic_report
 APP_ID="io.appearancestudio.Studio"
 APP_NAME="Appearance Studio"
 
+def apply_failure_message(details):
+    """Never claim successful rollback unless engine explicitly confirms it."""
+    detail = str(details)
+    if "rollback errors:" in detail:
+        return "Apply failed; rollback incomplete. Check your desktop settings."
+    if "failed and rolled back:" in detail:
+        return "Apply failed safely; previous appearance was restored."
+    return "Apply failed; previous appearance could not be confirmed."
+
 class StudioWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app,title=APP_NAME)
@@ -134,7 +143,7 @@ class StudioWindow(Adw.ApplicationWindow):
             writes=payload.get("write_count",0)
             self.toast.add_toast(Adw.Toast.new(f"Theme applied · {writes} changed setting" + ("" if writes==1 else "s")))
         else:
-            self.toast.add_toast(Adw.Toast.new("Apply failed safely; previous appearance was restored."))
+            self.toast.add_toast(Adw.Toast.new(apply_failure_message(payload)))
         return GLib.SOURCE_REMOVE
 
     def _run_diagnostics(self,_button):
