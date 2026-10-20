@@ -18,7 +18,7 @@ ARCHIVE_NAME = "AppearanceStudio-Core-PR-candidate-unsigned.zip"
 CANDIDATE_NOTICE = (
     "Appearance Studio Core - DEVELOPMENT CANDIDATE ONLY\n"
     "NOT A RELEASE. NOT DIGITALLY SIGNED. DO NOT REPLACE PERSONAL/ULTIMATE INSTALLATIONS.\n"
-    "Official public release remains v0.9.0-rc1-tandemvector.\n"
+    "Use versioned official GitHub Releases for production archives.\n"
     "Generated from the current PR source and its pinned PUBLIC_MANIFEST.json.\n"
 ).encode("utf-8")
 
