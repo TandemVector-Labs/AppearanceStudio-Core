@@ -2,6 +2,7 @@ name: Appearance Studio Public Core CI
 on:
   push:
   pull_request:
+  workflow_call:
 permissions:
   contents: read
 jobs:
