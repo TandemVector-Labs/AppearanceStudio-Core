@@ -45,6 +45,11 @@ def run():
         must_refuse(targets, receipt)
         targets["wrapper"].unlink()
 
+        linked_parent = root / "linked-parent"
+        linked_parent.symlink_to(root / "data", target_is_directory=True)
+        must_refuse({"wrapper": linked_parent / "appearance-studio"}, receipt)
+        linked_parent.unlink()
+
         receipt.parent.mkdir(parents=True)
         receipt.symlink_to(targets["wrapper"].parent)
         must_refuse(targets, receipt)
@@ -205,6 +210,16 @@ def run():
             state_root = root / "state" / "appearance-studio"
             installer.begin_install_transaction(owned_slots, state_root)
             original_engine.write_bytes(b"incomplete upgrade")
+            foreign_target = root / "outside-transaction.txt"
+            foreign_target.write_text("do-not-touch", encoding="utf-8")
+            wrong_slots = dict(owned_slots)
+            wrong_slots["version"] = foreign_target
+            try:
+                installer.recover_install_transaction(wrong_slots, state_root)
+                raise AssertionError("mismatched recovery path unexpectedly accepted")
+            except RuntimeError as exc:
+                assert "mismatched recovery journal" in str(exc)
+            assert foreign_target.read_text(encoding="utf-8") == "do-not-touch"
             recovered = installer.recover_install_transaction(owned_slots, state_root)
             assert recovered is True
             assert original_engine.read_bytes() == prior_engine
