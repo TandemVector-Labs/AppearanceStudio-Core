@@ -1,7 +1,14 @@
 # Appearance Studio Core — 0.9.0 Release Candidate 1
 
 Platform: Linux GNOME/GTK4, with Ubuntu 26.04 / GNOME 50 targeted.
-Published by Arclenor Technologies. Written by Dr. Emadoddin.
+**Publisher (organization-branded prerelease):** TandemVector-Labs.  
+**Original author:** Aliakbar Emadoddin (علی‌اکبر عمادالدین).  
+**Code signing:** not applied; SHA-256 verifies integrity, not publisher identity.
+
+The current organization-branded, unsigned Core asset is published at
+[v0.9.0-rc1-tandemvector](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.0-rc1-tandemvector).
+The older `v0.9.0-rc1` tagged release remains unchanged as historical provenance;
+its ZIP is not interchangeable with the organization-branded asset or checksum.
 
 A public **Linux core release candidate**, not the completed Ultimate Cinematic
 product. Includes the original, project-approved Studio Default SVG only.
