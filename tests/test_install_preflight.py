@@ -110,6 +110,44 @@ def run():
             assert call("--dry-run").returncode == 0
             assert "appearance-studio" in json.loads(receipt.read_text())["owned_paths"]["python"]
             assert not (root / "config" / "appearance-studio").exists()
+
+            # A Core upgrade preserves a user's settings, extra packs and activation
+            # history without running a real systemd user service.
+            prefs = root / "config" / "appearance-studio" / "settings.json"
+            prefs.parent.mkdir(parents=True)
+            prefs.write_text('{"selected_theme":"personal"}', encoding="utf-8")
+            extra = root / "data" / "appearance-studio" / "packs" / "personal" / "sample.txt"
+            extra.parent.mkdir(parents=True)
+            extra.write_text("keep-this-pack", encoding="utf-8")
+            private_state = root / "state" / "appearance-studio" / "owner-state.txt"
+            private_state.write_text("keep-state", encoding="utf-8")
+
+            fakebin = root / "fakebin"
+            fakebin.mkdir()
+            sysctl = fakebin / "systemctl"
+            sysctl.write_text('#!/bin/sh\\nprintf "%s\\\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\\n',
+                              encoding="utf-8")
+            sysctl.chmod(0o755)
+            service_log = root / "systemctl.log"
+            env["CORE_TEST_SYSTEMCTL_LOG"] = str(service_log)
+            env["PATH"] = str(fakebin) + os.pathsep + os.environ.get("PATH", "")
+            activated = call("--activate")
+            assert activated.returncode == 0, activated.stdout + activated.stderr
+            assert json.loads(receipt.read_text())["activate_requested"] is True
+            events = service_log.read_text(encoding="utf-8")
+            assert "enable --now appearance-studio-theme-monitor.service" in events
+
+            # A normal later update must not falsely de-authorize already running services.
+            updated = call()
+            assert updated.returncode == 0, updated.stdout + updated.stderr
+            assert "preserved from existing installation" in updated.stdout
+            assert json.loads(receipt.read_text())["activate_requested"] is True
+            assert service_log.read_text(encoding="utf-8") == events
+            assert prefs.read_text(encoding="utf-8") == '{"selected_theme":"personal"}'
+            assert extra.read_text(encoding="utf-8") == "keep-this-pack"
+            assert private_state.read_text(encoding="utf-8") == "keep-state"
+            assert (root / "data" / "appearance-studio" / "python" /
+                    "appearance_studio" / "__init__.py").is_file()
         print("INSTALL_ISOLATED_XDG_END_TO_END_PASS")
     else:
         print("INSTALL_ISOLATED_XDG_END_TO_END_SKIPPED_ROOT")
