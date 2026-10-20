@@ -28,6 +28,13 @@ jobs:
         run: |
           python3 -B .github/scripts/build_candidate.py \
             --output-dir "$RUNNER_TEMP/appearance-core-candidate" --smoke-test
+      - name: Verify deterministic unsigned 0.9.1 RC1 archive
+        shell: bash
+        run: |
+          python3 -B .github/scripts/build_release.py \
+            --output-dir "$RUNNER_TEMP/appearance-core-release-qa" --smoke-test
+          cd "$RUNNER_TEMP/appearance-core-release-qa"
+          sha256sum -c AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip.sha256
       - name: Retain PR canary for review, not as a GitHub Release
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
