@@ -28,7 +28,7 @@ def run():
         print("PUBLISHED_CORE_UPGRADE_SKIPPED_ROOT")
         return
     manifest = json.loads((ROOT / "PUBLIC_MANIFEST.json").read_text(encoding="utf-8"))
-    archive_info = manifest["latest_organization_branded_source_archive"]
+    archive_info = manifest["previous_organization_branded_source_archive"]
     archive_path = ROOT / archive_info["path"]
     assert archive_path.is_file() and not archive_path.is_symlink()
     assert archive_path.stat().st_size == archive_info["bytes"]
@@ -96,6 +96,9 @@ def run():
         assert "already current" in upgraded.stdout or "preserved from existing installation" in upgraded.stdout
         new_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         assert new_receipt["activate_requested"] is True
+        assert original_receipt["version"] == "0.9.0"
+        assert new_receipt["version"] == "0.9.1"
+        assert (root / "data" / "appearance-studio" / "VERSION").read_text().strip() == "0.9.1"
         assert new_receipt["owned_paths"] == original_receipt["owned_paths"]
         assert log.read_text(encoding="utf-8") == initial_log
 

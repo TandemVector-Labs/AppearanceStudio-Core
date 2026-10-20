@@ -5,7 +5,9 @@ import json
 
 root = Path(__file__).resolve().parents[2]
 doc = json.loads((root / "PUBLIC_MANIFEST.json").read_text())
-assert doc["release"] == "v0.9.0-rc1" and doc["full_product_final"] is False
+assert doc["release"] == "v0.9.1-rc1-tandemvector" and doc["full_product_final"] is False
+assert doc["core_version"] == "0.9.1"
+assert (root / "VERSION").read_text(encoding="utf-8").strip() == doc["core_version"]
 assert doc["windows_public_signed_release"] == "NOT_INCLUDED"
 assert len(doc["files"]) == 27
 for row in doc["files"]:
@@ -23,7 +25,7 @@ assert pack["public_distribution_approved"] is True and len(pack["themes"]) == 1
 # with the repository's active manifest without changing the historical ZIP.
 import zipfile
 
-release = doc["latest_organization_branded_source_archive"]
+release = doc["previous_organization_branded_source_archive"]
 assert release["unsigned"] is True and release["full_product_final"] is False
 assert release["original_rc1_tag_archive_unchanged"] is True
 zip_path = root / release["path"]

@@ -14,14 +14,14 @@
       "sha256": "09d501bfdc99c0c4522db8c803ce7b524a7691cbfd5aba4dcac61d81ee19f9e8"
     },
     {
-      "bytes": 8662,
+      "bytes": 9458,
       "path": "README.md",
-      "sha256": "47d918e36a7c6a21896cf2b19544754c376e8033cd73eb0065f63653ef6d13d5"
+      "sha256": "19577b0c48684d34a66e38a81a0872315611e95e907bfdb399187e6717cc722f"
     },
     {
       "bytes": 6,
       "path": "VERSION",
-      "sha256": "9d8c94f1ad3ea96b1e2ac4914fda4cb93c76b4a3e0d8cc6dd8976d6c0b227d15"
+      "sha256": "179a5390966e85c2071a87c1b31de13df67460665196f6529f8c4986842f81e5"
     },
     {
       "bytes": 25393,
@@ -49,9 +49,9 @@
       "sha256": "dd9a5c6823bdbd6dbd671afefa422aa376f6431b9a828fab899fdc3dce173781"
     },
     {
-      "bytes": 1162,
+      "bytes": 1379,
       "path": "share/metainfo/io.appearancestudio.Studio.metainfo.xml",
-      "sha256": "bd86cd483c14377d28b8f7f733f3eb307a93f1bec00aec9f6526a93eec36ecff"
+      "sha256": "56cc4ef18fef3e8774b13d453a5c02b0c510de76263375274c2a6635964af735"
     },
     {
       "bytes": 303,
@@ -66,7 +66,7 @@
     {
       "bytes": 93,
       "path": "src/appearance_studio/__init__.py",
-      "sha256": "b1cd04c89ab32a7f8c69176c3e34803704be46ad818995f18928ff4ca83959bc"
+      "sha256": "bd82cc31484c212898d329b2a15e886bb97fbe51ab61949eb8001daa039c881a"
     },
     {
       "bytes": 279,
@@ -121,7 +121,7 @@
     {
       "bytes": 8568,
       "path": "src/appearance_studio/ui.py",
-      "sha256": "20d339d9a31a2688003fe0e4a0633a884340cca01c633ffae81edeab59f772e7"
+      "sha256": "e95436aab0962869d25914dfd265443118e185d287aac4e9706bfa9865a0f0b4"
     },
     {
       "bytes": 2553,
@@ -140,7 +140,21 @@
     }
   ],
   "full_product_final": false,
-  "latest_organization_branded_source_archive": {
+  "media_public_approval_basis": "Bundled studio-default manifest public_distribution_approved=true",
+  "original_author": "Aliakbar Emadoddin",
+  "platform": "Linux GNOME/GTK",
+  "private_source_repository_included": false,
+  "product": "Appearance Studio Core",
+  "public_rc1_release_asset_unchanged": true,
+  "publisher_organization": "TandemVector-Labs",
+  "release": "v0.9.1-rc1-tandemvector",
+  "release_qa_manifest_SHA256": "89077af94a50d56e77ec3d56f3d97890aee9e51ae580e1f3c1ca10ed11af3376",
+  "release_status": "PUBLIC_PRERELEASE_CANDIDATE_NOT_FULL_PRODUCT",
+  "schema": 1,
+  "third_party_artwork_included": false,
+  "windows_public_signed_release": "NOT_INCLUDED",
+  "core_version": "0.9.1",
+  "previous_organization_branded_source_archive": {
     "bytes": 46821,
     "contains_copyrighted_franchise_media": false,
     "full_product_final": false,
@@ -149,18 +163,5 @@
     "sha256": "c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869",
     "source_commit": "873c08232aba0ef8e780bc961a652b0ddf3a991c",
     "unsigned": true
-  },
-  "media_public_approval_basis": "Bundled studio-default manifest public_distribution_approved=true",
-  "original_author": "Aliakbar Emadoddin",
-  "platform": "Linux GNOME/GTK",
-  "private_source_repository_included": false,
-  "product": "Appearance Studio Core",
-  "public_rc1_release_asset_unchanged": true,
-  "publisher_organization": "TandemVector-Labs",
-  "release": "v0.9.0-rc1",
-  "release_qa_manifest_SHA256": "89077af94a50d56e77ec3d56f3d97890aee9e51ae580e1f3c1ca10ed11af3376",
-  "release_status": "PUBLIC_PRERELEASE_CANDIDATE_NOT_FULL_PRODUCT",
-  "schema": 1,
-  "third_party_artwork_included": false,
-  "windows_public_signed_release": "NOT_INCLUDED"
+  }
 }

@@ -8,7 +8,7 @@ Published under **TandemVector-Labs** on GitHub for Linux and future Windows pro
 
 ## Release status
 
-Version **0.9.0** is a release candidate. The portable core, Theme Pack validation, transaction rollback, installer/uninstaller, and read-only monitoring model are testable independently of a live desktop session. A stable GNOME 50 live canary and soak remain required before declaring version 1.0 final.
+Version **0.9.1** is a release candidate. The portable core, Theme Pack validation, transaction rollback, installer/uninstaller, and read-only monitoring model are testable independently of a live desktop session. A stable GNOME 50 live canary and soak remain required before declaring version 1.0 final.
 
 ## Platform strategy
 
@@ -41,7 +41,22 @@ Recommended target:
 
 The command-line core remains useful when the optional graphical or panel dependencies are not installed.
 
-## Official unsigned organization-branded Core prerelease
+## Appearance Studio Core 0.9.1 RC1 (unsigned)
+
+The next verified Core source release is **0.9.1 RC1**, tag
+[`v0.9.1-rc1-tandemvector`](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.1-rc1-tandemvector).
+Its versioned ZIP and adjacent `.sha256` checksum are published **only after all
+release-gated CI jobs succeed**. If that tag is not yet visible, no official
+0.9.1 download has been published; use the historical RC1 instead rather than
+an unverified build.
+
+The 0.9.1 update includes ownership-checked **in-place upgrade**, journal
+recovery via `python3 install.py --recover`, actual user-manager service-name
+collision protection, and safer GTK error reporting. It retains the single
+original **Appearance Studio** Theme Pack; Windows and Ultimate are separate.
+
+## Previous official unsigned organization-branded RC1
+
 
 **Official GitHub Release:** [Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.0-rc1-tandemvector). Download its [unsigned Linux Core ZIP](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.0-rc1-tandemvector/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip) and [SHA-256 checksum](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.0-rc1-tandemvector/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip.sha256). The same verified ZIP is also kept in [repository downloads](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip).
 

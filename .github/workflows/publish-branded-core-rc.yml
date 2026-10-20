@@ -1,87 +1,104 @@
-name: Publish branded unsigned Core prerelease
+name: Publish verified unsigned Appearance Studio Core 0.9.1 RC1
 
 on:
   push:
     branches: [main]
     paths:
+      - VERSION
       - .github/workflows/publish-branded-core-rc.yml
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: appearance-studio-core-rc-branded-release
+  group: appearance-studio-core-0-9-1-rc1-release
   cancel-in-progress: false
 
 jobs:
-  verify-and-publish:
+  full-core-qa:
+    # All three gates: source/install/upgrade, GTK4 + GSettings, and a real
+    # isolated user-manager lifecycle for the official systemd unit names.
+    uses: ./.github/workflows/core-ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    needs: [full-core-qa]
+    if: github.repository == 'TandemVector-Labs/AppearanceStudio-Core' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Verify Core sources and existing CI contracts
-        env:
-          PYTHONPATH: src
-        run: |
-          python3 -B .github/scripts/release_audit.py
-          python3 -B tests/test_engine_transaction.py
-          python3 -B tests/test_system_monitor_model.py
-      - name: Verify exact unsigned organization ZIP and checksum
+      - name: Verify exact main commit and historical release integrity
+        id: release_guard
         shell: bash
-        run: |
-          python3 - <<'PY'
-          import hashlib
-          import zipfile
-          from pathlib import Path
-          folder = Path('downloads')
-          name = 'AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip'
-          pack = folder / name
-          expected = 'c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869'
-          parts = (folder / (name + '.sha256')).read_text().strip().split()
-          assert len(parts) == 2 and parts[0] == expected and parts[1] == name
-          assert pack.stat().st_size == 46821
-          assert hashlib.sha256(pack.read_bytes()).hexdigest() == expected
-          with zipfile.ZipFile(pack) as z:
-              assert z.testzip() is None
-              paths = z.namelist()
-              assert len(paths) == len(set(paths)) and len(paths) >= 27
-              assert not any(n.startswith('/') or '..' in Path(n).parts for n in paths)
-              assert not any(any(t in n.lower() for t in ('private-enjoy', 'ultimate/', 'sekiro', 'berserk')) for n in paths)
-          print('UNSIGNED_BRANDED_PACKAGE_VERIFIED')
-          PY
-      - name: Create separate historical-safe GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(cat VERSION)" = '0.9.1'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$GITHUB_SHA" = "$main_sha" || {
+            echo "Main moved since this release's full QA; refusing stale publication" >&2
+            exit 1
+          }
+          python3 -B .github/scripts/release_audit.py
+          tag='v0.9.1-rc1-tandemvector'
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = false; then
+              echo "OFFICIAL_RC_RELEASE_ALREADY_PUBLISHED_UNCHANGED"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Existing draft requires inspection; refusing to replace" >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "Existing tag with no published release; refusing replacement" >&2
+            exit 1
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+      - name: Reproducibly build and smoke-test source release ZIP
+        if: steps.release_guard.outputs.publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          tag='v0.9.0-rc1-tandemvector'
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo 'Already published; no duplicate release action'
-            exit 0
-          fi
-          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
-          # Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs
-
-          **Original author:** Aliakbar Emadoddin (علی‌اکبر عمادالدین).
-          **Publisher:** TandemVector-Labs.
-          **Signing:** This Linux source ZIP is unsigned. SHA-256 is an integrity check, not a digital signature.
-
-          This organization-branded Core source package is a **prerelease** for Linux/GNOME. It is not the completed Ultimate edition or a Windows release. No private Enjoy18 assets, copyrighted franchise content or user settings are included.
-
-          **SHA-256:** `c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869`
-
-          Extract the ZIP and run `python3 install.py --dry-run`, then `python3 install.py` as the desktop user (without sudo). See the README and LICENSE in the archive.
-
-          The older `v0.9.0-rc1` GitHub Release is retained unchanged for historical provenance. Ultimate FINAL remains open.
-          NOTES
+          python3 -B .github/scripts/build_release.py \
+            --output-dir "$RUNNER_TEMP/official-core-0.9.1" --smoke-test
+          cd "$RUNNER_TEMP/official-core-0.9.1"
+          sha256sum -c AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip.sha256
+      - name: Publish draft, verify downloaded bytes, then publish prerelease
+        if: steps.release_guard.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='v0.9.1-rc1-tandemvector'
+          name='AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip'
+          source="$RUNNER_TEMP/official-core-0.9.1"
           gh release create "$tag" \
-            "downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip" \
-            "downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip.sha256" \
+            "$source/$name" "$source/$name.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title 'Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs unsigned' \
-            --notes-file "$RUNNER_TEMP/release-notes.md" \
-            --prerelease
+            --title 'Appearance Studio Core 0.9.1 RC1 — TandemVector-Labs unsigned' \
+            --notes-file RELEASE_NOTES.md --prerelease --draft
+          mkdir -p "$RUNNER_TEMP/official-core-downloaded"
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$name" --pattern "$name.sha256" \
+            --dir "$RUNNER_TEMP/official-core-downloaded"
+          cmp "$source/$name" "$RUNNER_TEMP/official-core-downloaded/$name"
+          cmp "$source/$name.sha256" "$RUNNER_TEMP/official-core-downloaded/$name.sha256"
+          (
+            cd "$RUNNER_TEMP/official-core-downloaded"
+            sha256sum -c "$name.sha256"
+          )
+          # Keep a failing draft private. Only a verified download is published.
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,assets
+          echo "CORE_0_9_1_UNSIGNED_PRERELEASE_PUBLISHED_AND_VERIFIED"

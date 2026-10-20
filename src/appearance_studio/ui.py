@@ -113,7 +113,7 @@ class StudioWindow(Adw.ApplicationWindow):
         page=self._page()
         product=Adw.PreferencesGroup(title=APP_NAME,description="A professional appearance center for GNOME desktops.")
         page.add(product)
-        product.add(Adw.ActionRow(title="Version",subtitle="0.9.0"))
+        product.add(Adw.ActionRow(title="Version",subtitle="0.9.1"))
         product.add(Adw.ActionRow(title="Publisher",subtitle="TandemVector-Labs"))
         product.add(Adw.ActionRow(title="Author",subtitle="Aliakbar Emadoddin · علی‌اکبر عمادالدین"))
         product.add(Adw.ActionRow(title="Design",subtitle="Portable core · verified theme packs · bounded desktop writes · transactional rollback"))
