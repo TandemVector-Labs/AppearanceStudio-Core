@@ -61,6 +61,65 @@ def child() -> int:
     ]
     assert window.get_surface() is not None, "Window surface not created"
     print("BROADWAY_UI_FOUR_PAGES_RENDERED_PASS")
+
+    # Real Gtk.Button.clicked signals, view navigation, async callbacks and
+    # diagnostics status are exercised with fake backends. Never mutate dconf.
+    def all_widgets(parent):
+        child = parent.get_first_child()
+        while child is not None:
+            yield child
+            yield from all_widgets(child)
+            child = child.get_next_sibling()
+
+    def until(predicate):
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            while GLib.MainContext.default().pending():
+                GLib.MainContext.default().iteration(False)
+            if predicate():
+                return
+            time.sleep(0.015)
+        raise AssertionError("GTK event loop did not reach expected state")
+
+    buttons = {
+        widget.get_label(): widget
+        for widget in all_widgets(window)
+        if isinstance(widget, Gtk.Button) and widget.get_label() in (
+            "Dark", "Light", "Run Diagnostics")
+    }
+    assert set(buttons) == {"Dark", "Light", "Run Diagnostics"}, buttons
+    calls = []
+    def stub_apply(theme_id, mode):
+        calls.append((theme_id, mode))
+        return {"write_count": 2}
+
+    ui.apply = stub_apply
+    for page_name in ("packs", "diagnostics", "about", "themes"):
+        window.stack.set_visible_child_name(page_name)
+        assert window.stack.get_visible_child_name() == page_name
+
+    buttons["Dark"].emit("clicked")
+    until(lambda: len(calls) == 1 and not window._busy)
+    assert calls[-1] == ("studio-default", "dark")
+    buttons["Light"].emit("clicked")
+    until(lambda: len(calls) == 2 and not window._busy)
+    assert calls[-1] == ("studio-default", "light")
+    assert window.title.get_subtitle() == "Professional desktop appearance center"
+
+    ui.diagnostic_report = lambda: {
+        "pass": True, "checks": {"pack": True, "gtk": True},
+        "warnings": []
+    }
+    buttons["Run Diagnostics"].emit("clicked")
+    until(lambda: window.diag_summary.get_subtitle().startswith("2/2 checks passed"))
+    assert window.diag_summary.get_subtitle() == "2/2 checks passed · 0 warnings"
+    assert "rollback incomplete" in ui.apply_failure_message(
+        "apply failed: test; rollback errors: ['permission']")
+    assert "was restored" in ui.apply_failure_message(
+        "apply failed and rolled back: test")
+    assert "could not be confirmed" in ui.apply_failure_message(
+        "unclassified failure")
+    print("BROADWAY_UI_THEME_BUTTONS_DIAGNOSTICS_AND_SAFE_ERRORS_PASS")
     window.close()
     app.quit()
     return 0
