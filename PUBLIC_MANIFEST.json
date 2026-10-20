@@ -119,9 +119,9 @@
       "sha256": "356d0f263a6bfc9dd575f73d87747f519c69b8d7ae423677ee5898be55f03ea0"
     },
     {
-      "bytes": 8146,
+      "bytes": 8568,
       "path": "src/appearance_studio/ui.py",
-      "sha256": "ea1e613c78132433fcb3522be9aaf2ca58f4445e15e90578d7ff949f28c66e58"
+      "sha256": "20d339d9a31a2688003fe0e4a0633a884340cca01c633ffae81edeab59f772e7"
     },
     {
       "bytes": 2553,
