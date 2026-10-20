@@ -220,6 +220,19 @@ def run():
             except RuntimeError as exc:
                 assert "mismatched recovery journal" in str(exc)
             assert foreign_target.read_text(encoding="utf-8") == "do-not-touch"
+            app_path = root / "data" / "appearance-studio"
+            parked = root / "data" / "appearance-studio-parked"
+            app_path.rename(parked)
+            app_path.symlink_to(parked, target_is_directory=True)
+            try:
+                try:
+                    installer.recover_install_transaction(owned_slots, state_root)
+                    raise AssertionError("recovery through symlinked ancestor unexpectedly accepted")
+                except RuntimeError as exc:
+                    assert "linked owned target or parent" in str(exc)
+            finally:
+                app_path.unlink()
+                parked.rename(app_path)
             recovery_run = call("--recover")
             assert recovery_run.returncode == 0, recovery_run.stdout + recovery_run.stderr
             assert "restored previous owned installation" in recovery_run.stdout
@@ -275,6 +288,33 @@ def run():
         assert "enable --now" in events
         assert "disable --now" in events
         assert (root / "data" / "appearance-studio" / "packs" / "studio-default").is_dir()
+        # Abrupt termination after recording service intent must cause the
+        # next explicit CLI recovery to perform owned-service cleanup.
+        code = (
+            "import importlib.util, os, sys\n"
+            f"spec=importlib.util.spec_from_file_location('installer', {str(ROOT / 'install.py')!r})\n"
+            "module=importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "def crash(*args):\n"
+            "    os._exit(46)\n"
+            "module._systemctl=crash\n"
+            "sys.argv=['install.py', '--activate']\n"
+            "module.main()\n"
+        )
+        killed = subprocess.run([sys.executable, "-c", code], env=env,
+                                capture_output=True, text=True, timeout=30)
+        assert killed.returncode == 46, killed.stdout + killed.stderr
+        pending = root / "state" / "appearance-studio" / "core-install-pending"
+        assert (pending / "service-intent.json").is_file()
+        log_before = log.read_text(encoding="utf-8")
+        recovered = subprocess.run([sys.executable, str(ROOT / "install.py"), "--recover"],
+                                   env=env, capture_output=True, text=True, timeout=30)
+        assert recovered.returncode == 0, recovered.stdout + recovered.stderr
+        assert "restored previous owned installation" in recovered.stdout
+        assert receipt.read_bytes() == saved
+        assert "disable --now" in log.read_text(encoding="utf-8")[len(log_before):]
+        assert not pending.exists()
+        print("CORE_SERVICE_INTENT_CRASH_RECOVERY_PASS")
         print("CORE_FAILED_SERVICE_ACTIVATION_ROLLBACK_PASS")
 
     # Simulate SIGKILL-like exit after a tree promotion, then invoke the CLI recovery.
