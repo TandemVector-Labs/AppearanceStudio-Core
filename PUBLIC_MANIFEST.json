@@ -24,9 +24,9 @@
       "sha256": "9d8c94f1ad3ea96b1e2ac4914fda4cb93c76b4a3e0d8cc6dd8976d6c0b227d15"
     },
     {
-      "bytes": 23768,
+      "bytes": 25393,
       "path": "install.py",
-      "sha256": "130b6fa33e00612d394783726a0d4235e3bf246f4a4ceb507032caecaac8c174"
+      "sha256": "3f0def28617fc9f118056fb39bb3ca256926fcfaf43971d9ba4af158c20f24fb"
     },
     {
       "bytes": 1360,
@@ -134,9 +134,9 @@
       "sha256": "c5fcd4e9bd8640b12d6d98a11bed3ca61488f257b669246ac4100bd542ffb707"
     },
     {
-      "bytes": 6440,
+      "bytes": 7438,
       "path": "uninstall.py",
-      "sha256": "112f4a4f65b958f047e9cbf1dbac158081ef6de2b0f4ec3d8388c2ebddee049f"
+      "sha256": "dc11473b8b59ea533d7210912ef68d0e08a2223e663afc962902d77d7b9bf29d"
     }
   ],
   "full_product_final": false,
