@@ -148,6 +148,16 @@ def run():
             assert "already current" in updated.stdout or "preserved from existing installation" in updated.stdout
             assert json.loads(receipt.read_text())["activate_requested"] is True
             assert service_log.read_text(encoding="utf-8") == events
+            # An explicit --activate must reassert enabled/started state even
+            # when the receipt already records previously requested activation.
+            # A passive update without --activate must not issue systemctl calls.
+            reactivated = call("--activate")
+            assert reactivated.returncode == 0, reactivated.stdout + reactivated.stderr
+            assert json.loads(receipt.read_text())["activate_requested"] is True
+            reasserted_events = service_log.read_text(encoding="utf-8")
+            assert reasserted_events.count("enable --now appearance-studio-theme-monitor.service") == 2
+            assert reasserted_events.count("daemon-reload") == 2
+            events = reasserted_events
             assert prefs.read_text(encoding="utf-8") == '{"selected_theme":"personal"}'
             assert extra.read_text(encoding="utf-8") == "keep-this-pack"
             assert private_state.read_text(encoding="utf-8") == "keep-state"
