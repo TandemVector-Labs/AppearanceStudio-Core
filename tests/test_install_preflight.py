@@ -308,12 +308,15 @@ def run():
         pending = root / "state" / "appearance-studio" / "core-install-pending"
         assert (pending / "service-intent.json").is_file()
         log_before = log.read_text(encoding="utf-8")
+        incomplete_receipt = receipt.read_bytes()
         env["CORE_TEST_FAIL_DISABLE"] = "1"
         blocked = subprocess.run([sys.executable, str(ROOT / "install.py"), "--recover"],
                                  env=env, capture_output=True, text=True, timeout=30)
         assert blocked.returncode != 0
         assert pending.exists() and (pending / "service-intent.json").is_file()
-        assert receipt.read_bytes() == saved
+        # Cleanup failed before restoring preimages: preserve the pending snapshot
+        # and the exact interrupted state until recovery can succeed.
+        assert receipt.read_bytes() == incomplete_receipt
         env.pop("CORE_TEST_FAIL_DISABLE")
         recovered = subprocess.run([sys.executable, str(ROOT / "install.py"), "--recover"],
                                    env=env, capture_output=True, text=True, timeout=30)
