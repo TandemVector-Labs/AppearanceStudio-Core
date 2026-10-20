@@ -28,7 +28,7 @@ def run():
         print("PUBLISHED_CORE_UPGRADE_SKIPPED_ROOT")
         return
     manifest = json.loads((ROOT / "PUBLIC_MANIFEST.json").read_text(encoding="utf-8"))
-    archive_info = manifest["latest_organization_branded_source_archive"]
+    archive_info = manifest["previous_organization_branded_source_archive"]
     archive_path = ROOT / archive_info["path"]
     assert archive_path.is_file() and not archive_path.is_symlink()
     assert archive_path.stat().st_size == archive_info["bytes"]
