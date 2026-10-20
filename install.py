@@ -243,6 +243,30 @@ def _systemctl(*args: str) -> None:
                            + " (exit " + str(result.returncode) + ")")
 
 
+def assert_manager_unit_ownership(targets: dict) -> None:
+    """Prevent a shared user manager from acting on foreign units of same name."""
+    if not shutil.which("systemctl"):
+        raise RuntimeError("systemctl unavailable: cannot verify Core unit ownership")
+    for key in ("service", "system_monitor_service"):
+        path = targets[key]
+        name = path.name
+        try:
+            result = subprocess.run(
+                ["systemctl", "--user", "show", name,
+                 "--property=FragmentPath", "--value"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, timeout=8, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RuntimeError("cannot verify user-manager service ownership: " + name) from exc
+        if result.returncode:
+            raise RuntimeError("cannot verify user-manager service ownership: " + name)
+        loaded = result.stdout.strip()
+        if loaded and loaded != str(path):
+            raise RuntimeError(
+                "foreign user-manager unit collision: " + name +
+                " is loaded from " + loaded + " instead of " + str(path))
+
+
 def _service_intent(pending: Path) -> dict | None:
     path = pending / "service-intent.json"
     if path.is_symlink():
@@ -298,6 +322,7 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
     # Fresh activation may have partially enabled services before interruption.
     # Its intent marker is durably recorded before invoking systemctl.
     if intent is not None and not intent["previously_activated"]:
+        assert_manager_unit_ownership(paths)
         _systemctl("disable", "--now",
                    "appearance-studio-theme-monitor.service",
                    "appearance-studio-system-monitor.service")
@@ -418,6 +443,11 @@ def main():
                 install_kind == "owned-update"
                 and json.loads(manifest_path.read_text(encoding="utf-8")).get("activate_requested") is True
             )
+            # Check the actual user manager, not only XDG paths in this process.
+            # In particular, a sandboxed XDG_DATA_HOME does not change which
+            # appearance-studio services the logged-in manager will activate.
+            if ns.activate or previously_activated:
+                assert_manager_unit_ownership(targets)
             sources = [
                 (SOURCE/"src/appearance_studio", targets["python"]/"appearance_studio", "tree"),
                 (SOURCE/"share/appearance-studio/packs/studio-default", targets["builtin_pack"], "tree"),
@@ -478,6 +508,7 @@ exec python3 -m appearance_studio "$@"
                                             "previously_activated": previously_activated})
                                 + "\n", 0o600)
                     _systemctl("daemon-reload")
+                    assert_manager_unit_ownership(targets)
                     if ns.activate:
                         _systemctl("enable", "--now",
                                    "appearance-studio-theme-monitor.service",
