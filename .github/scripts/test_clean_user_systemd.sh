@@ -50,11 +50,25 @@ sudo chown -R "$tester:$tester" "$home/source"
 sudo loginctl enable-linger "$tester"
 sudo systemctl start "user@$uid.service"
 runtime="/run/user/$uid"
+# A newly created user with no login often has no active user bus socket;
+# bootstrap only that dedicated CI account's dbus.socket, never the runner's.
+if ! sudo -u "$tester" -H env "XDG_RUNTIME_DIR=$runtime" \
+  systemctl --user start dbus.socket; then
+  echo "Dedicated user manager could not start dbus.socket" >&2
+fi
 for _ in $(seq 1 40); do
   [[ -S "$runtime/bus" ]] && break
   sleep .25
 done
-[[ -S "$runtime/bus" ]] || { echo "Dedicated user bus not running" >&2; exit 1; }
+if [[ ! -S "$runtime/bus" ]]; then
+  echo "Dedicated user bus not running" >&2
+  sudo systemctl status "user@$uid.service" --no-pager --full || :
+  sudo -u "$tester" -H env "XDG_RUNTIME_DIR=$runtime" \
+    systemctl --user status dbus.socket --no-pager --full || :
+  sudo journalctl -u "user@$uid.service" --no-pager -n 35 || :
+  sudo ls -la "$runtime" || :
+  exit 1
+fi
 as_user() {
   sudo -u "$tester" -H env \
     "XDG_RUNTIME_DIR=$runtime" \
