@@ -73,11 +73,23 @@ if ! sudo -u "$tester" -H test -S "$runtime/bus"; then
 fi
 as_user() {
   sudo -u "$tester" -H env \
+    "HOME=$home" \
+    "XDG_CONFIG_HOME=$home/.config" \
+    "XDG_DATA_HOME=$home/.local/share" \
+    "XDG_STATE_HOME=$home/.local/state" \
     "XDG_RUNTIME_DIR=$runtime" \
     "DBUS_SESSION_BUS_ADDRESS=unix:path=$runtime/bus" \
     "GSETTINGS_BACKEND=keyfile" \
     "$@"
 }
+# Explicitly isolate unit environments too: user@UID.service can inherit the
+# runner's XDG_CONFIG_HOME even when the CLI is called with sudo -H.
+as_user systemctl --user set-environment \
+  "HOME=$home" "XDG_CONFIG_HOME=$home/.config" \
+  "XDG_DATA_HOME=$home/.local/share" \
+  "XDG_STATE_HOME=$home/.local/state" \
+  "GSETTINGS_BACKEND=keyfile" \
+  "DBUS_SESSION_BUS_ADDRESS=unix:path=$runtime/bus"
 source="$home/source"
 unit_theme="appearance-studio-theme-monitor.service"
 unit_system="appearance-studio-system-monitor.service"
@@ -89,7 +101,6 @@ as_user /usr/bin/python3 -B "$source/install.py" --dry-run
 as_user /usr/bin/python3 -B "$source/install.py"
 receipt="$home/.local/state/appearance-studio/install-manifest.json"
 [[ -f "$receipt" ]] || { echo "Receipt not produced" >&2; exit 1; }
-as_user systemctl --user set-environment GSETTINGS_BACKEND=keyfile
 as_user /usr/bin/python3 -B "$source/install.py" --activate
 for unit in "$unit_theme" "$unit_system"; do
   want="$home/.config/systemd/user/$unit"
