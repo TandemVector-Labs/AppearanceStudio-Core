@@ -91,7 +91,7 @@ class StudioWindow(Adw.ApplicationWindow):
 
     def _diagnostics_page(self):
         page=self._page()
-        group=Adw.PreferencesGroup(title="Health & compatibility",description="Read-only checks for the application, theme packs and desktop dependencies.")
+        group=Adw.PreferencesGroup(title="Health and compatibility",description="Read-only checks for the application, theme packs and desktop dependencies.")
         page.add(group)
         self.diag_summary=Adw.ActionRow(title="Diagnostics",subtitle="Not run yet")
         group.add(self.diag_summary)
