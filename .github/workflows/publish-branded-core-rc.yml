@@ -1,0 +1,87 @@
+name: Publish branded unsigned Core prerelease
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-branded-core-rc.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: appearance-studio-core-rc-branded-release
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify Core sources and existing CI contracts
+        env:
+          PYTHONPATH: src
+        run: |
+          python3 -B .github/scripts/release_audit.py
+          python3 -B tests/test_engine_transaction.py
+          python3 -B tests/test_system_monitor_model.py
+      - name: Verify exact unsigned organization ZIP and checksum
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import zipfile
+          from pathlib import Path
+          folder = Path('downloads')
+          name = 'AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip'
+          pack = folder / name
+          expected = 'c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869'
+          parts = (folder / (name + '.sha256')).read_text().strip().split()
+          assert len(parts) == 2 and parts[0] == expected and parts[1] == name
+          assert pack.stat().st_size == 46821
+          assert hashlib.sha256(pack.read_bytes()).hexdigest() == expected
+          with zipfile.ZipFile(pack) as z:
+              assert z.testzip() is None
+              paths = z.namelist()
+              assert len(paths) == len(set(paths)) and len(paths) >= 27
+              assert not any(n.startswith('/') or '..' in Path(n).parts for n in paths)
+              assert not any(any(t in n.lower() for t in ('private-enjoy', 'ultimate/', 'sekiro', 'berserk')) for n in paths)
+          print('UNSIGNED_BRANDED_PACKAGE_VERIFIED')
+          PY
+      - name: Create separate historical-safe GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='v0.9.0-rc1-tandemvector'
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Already published; no duplicate release action'
+            exit 0
+          fi
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          # Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs
+
+          **Original author:** Aliakbar Emadoddin (علی‌اکبر عمادالدین).
+          **Publisher:** TandemVector-Labs.
+          **Signing:** This Linux source ZIP is unsigned. SHA-256 is an integrity check, not a digital signature.
+
+          This organization-branded Core source package is a **prerelease** for Linux/GNOME. It is not the completed Ultimate edition or a Windows release. No private Enjoy18 assets, copyrighted franchise content or user settings are included.
+
+          **SHA-256:** `c8825929c995b590fa75241764c8556e10075879b91a49a0b8915207ee1a4869`
+
+          Extract the ZIP and run `python3 install.py --dry-run`, then `python3 install.py` as the desktop user (without sudo). See the README and LICENSE in the archive.
+
+          The older `v0.9.0-rc1` GitHub Release is retained unchanged for historical provenance. Ultimate FINAL remains open.
+          NOTES
+          gh release create "$tag" \
+            "downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip" \
+            "downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title 'Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs unsigned' \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --prerelease
