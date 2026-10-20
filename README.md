@@ -2,9 +2,9 @@
 
 Appearance Studio is a professional desktop appearance center for GNOME on Linux. It is designed around a portable core, verified Theme Packs, bounded desktop writes, transactional rollback, and independent monitoring services.
 
-**Written by Dr. Emadoddin · نوشته شده توسط دکتر عمادالدین**
+**Original author: Aliakbar Emadoddin · نویسندهٔ اصلی: علی‌اکبر عمادالدین**
 
-Published by **Arclenor Technologies** — a platform-neutral software brand for Windows and Linux products. The current Appearance Studio implementation targets Linux/GNOME; Windows support is planned and is not claimed as shipped yet.
+Published under **TandemVector-Labs** on GitHub for Linux and future Windows products. The current Appearance Studio implementation targets Linux/GNOME; Windows support is planned and is not claimed as shipped yet.
 
 ## Release status
 

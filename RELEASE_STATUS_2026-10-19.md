@@ -1,6 +1,6 @@
 # Appearance Studio Core — public release status (2026-10-19)
 
-**Available now:** [Appearance Studio Core v0.9.0-rc1](https://github.com/Usefull-Skills/AppearanceStudio-Core/releases/tag/v0.9.0-rc1).
+**Available now:** [Appearance Studio Core v0.9.0-rc1](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.0-rc1).
 
 This is the Linux/GNOME public Core edition, not the full cinematic Ultimate edition. The ZIP release is public and contains the software's public Core sources, installer, and a bundled original default pack. It excludes private development state, user settings, and third-party franchise artwork.
 

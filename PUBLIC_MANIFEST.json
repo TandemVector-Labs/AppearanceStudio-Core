@@ -1,21 +1,22 @@
 {
   "bundled_asset": "Original Studio Default vector SVG",
   "code_and_distribution_license": "See LICENSE and NOTICE; all rights reserved",
+  "cryptographic_code_signing": "NOT_APPLIED_TO_LINUX_CORE_SOURCE",
   "files": [
     {
-      "bytes": 861,
+      "bytes": 866,
       "path": "LICENSE",
-      "sha256": "417d469e02f419513515a205ff028f235fb5f8604a3cd19488fb84b7b1c71675"
+      "sha256": "7eb9c84e32b75a7973df0a5a20e79427a2d22c8e9a49e548dd156e15d8f7a178"
     },
     {
-      "bytes": 298,
+      "bytes": 336,
       "path": "NOTICE",
-      "sha256": "2e90b58676fa9d33f4eff3459a4ceff150b67ea2ca29f28a57340371fb3091c9"
+      "sha256": "09d501bfdc99c0c4522db8c803ce7b524a7691cbfd5aba4dcac61d81ee19f9e8"
     },
     {
-      "bytes": 5305,
+      "bytes": 5303,
       "path": "README.md",
-      "sha256": "4a665548aa08cccbc1dbb52d0dcdffa35981bf84fb30f10495885cd0327c09b0"
+      "sha256": "df34b0360b0d49076d7652707f18b4f6a305c8f06e30585d96a6f4f0a6485026"
     },
     {
       "bytes": 6,
@@ -33,14 +34,14 @@
       "sha256": "da043f0bdf7f8a935b1ba00fc7840e6c59e8314bea62b72fd03bebf2efa86178"
     },
     {
-      "bytes": 764,
+      "bytes": 770,
       "path": "share/appearance-studio/packs/studio-default/manifest.json",
-      "sha256": "d97fc554b841bd8945a8cb6c3717a222fa0c63ad19ee882abbcd775c7ed8a9dd"
+      "sha256": "8af13ca0c29d47ff8cd2cd4e05b0e1da93e2ee308dc1c10e7cb10db97ff14092"
     },
     {
-      "bytes": 1151,
+      "bytes": 1147,
       "path": "share/appearance-studio/platform-support.json",
-      "sha256": "f692f3784262853bc48be6cb00915f78a00487c5b1743813c13e46506e877c92"
+      "sha256": "f74344f64bf5e0224b55d2250bd096d1dbf92d32c05be2e5b02e5cecd55fe155"
     },
     {
       "bytes": 533,
@@ -48,9 +49,9 @@
       "sha256": "dd9a5c6823bdbd6dbd671afefa422aa376f6431b9a828fab899fdc3dce173781"
     },
     {
-      "bytes": 1153,
+      "bytes": 1162,
       "path": "share/metainfo/io.appearancestudio.Studio.metainfo.xml",
-      "sha256": "da4d34adcdd7629e69b85cb2a29cebd25a754247226c53bbdf337a706a1e7b03"
+      "sha256": "bd86cd483c14377d28b8f7f733f3eb307a93f1bec00aec9f6526a93eec36ecff"
     },
     {
       "bytes": 303,
@@ -63,9 +64,9 @@
       "sha256": "fcef400298feb70c04edddc81ad7af6f8ca50784c4e42a036db7f5ff12440e2c"
     },
     {
-      "bytes": 88,
+      "bytes": 93,
       "path": "src/appearance_studio/__init__.py",
-      "sha256": "cf7bf03c59ce896048b94f1b6568e6a6544465538e5b921d182970ef536a7587"
+      "sha256": "b1cd04c89ab32a7f8c69176c3e34803704be46ad818995f18928ff4ca83959bc"
     },
     {
       "bytes": 279,
@@ -118,9 +119,9 @@
       "sha256": "356d0f263a6bfc9dd575f73d87747f519c69b8d7ae423677ee5898be55f03ea0"
     },
     {
-      "bytes": 8172,
+      "bytes": 8144,
       "path": "src/appearance_studio/ui.py",
-      "sha256": "e0c7fdbd1081ad33f8c17e28066c38132a253f60e51a70f38f4fea2afa58723f"
+      "sha256": "65f3b30870cb87af81482daa0f400bff1bec02acf4f7ca987428b2dd2aa57e01"
     },
     {
       "bytes": 2553,
@@ -140,9 +141,12 @@
   ],
   "full_product_final": false,
   "media_public_approval_basis": "Bundled studio-default manifest public_distribution_approved=true",
+  "original_author": "Aliakbar Emadoddin",
   "platform": "Linux GNOME/GTK",
   "private_source_repository_included": false,
   "product": "Appearance Studio Core",
+  "public_rc1_release_asset_unchanged": true,
+  "publisher_organization": "TandemVector-Labs",
   "release": "v0.9.0-rc1",
   "release_qa_manifest_SHA256": "89077af94a50d56e77ec3d56f3d97890aee9e51ae580e1f3c1ca10ed11af3376",
   "release_status": "PUBLIC_PRERELEASE_CANDIDATE_NOT_FULL_PRODUCT",

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "product": "Appearance Studio",
-  "publisher": "Arclenor Technologies",
+  "publisher": "TandemVector-Labs",
   "architecture": "shared-theme-pack-contract-with-platform-specific-desktop-backends",
   "platforms": {
     "linux": {

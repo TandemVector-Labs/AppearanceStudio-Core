@@ -1,13 +1,13 @@
 {
   "schema": 2,
   "id": "studio-default",
-  "name": "Studio Default",
+  "name": "Appearance Studio",
   "version": "1.0.0",
   "license": "LicenseRef-AppearanceStudio-Proprietary",
   "themes": [
     {
       "id": "studio-default",
-      "name": "Studio Default",
+      "name": "Appearance Studio",
       "assets": {
         "dark_theme": "Yaru-dark",
         "light_theme": "Yaru",
