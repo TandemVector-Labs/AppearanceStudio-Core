@@ -229,6 +229,38 @@ def begin_install_transaction(paths: dict, state: Path) -> Path:
             shutil.rmtree(preparing)
 
 
+def _systemctl(*args: str) -> None:
+    if not shutil.which("systemctl"):
+        raise RuntimeError("systemctl unavailable: cannot verify owned service operation")
+    try:
+        result = subprocess.run(["systemctl", "--user", *args],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                                text=True, timeout=20, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("owned service operation failed: " + " ".join(args)) from exc
+    if result.returncode:
+        raise RuntimeError("owned service operation failed: " + " ".join(args)
+                           + " (exit " + str(result.returncode) + ")")
+
+
+def _service_intent(pending: Path) -> dict | None:
+    path = pending / "service-intent.json"
+    if path.is_symlink():
+        raise RuntimeError("linked service recovery metadata refused")
+    if not path.exists():
+        return None
+    if not path.is_file() or path.stat().st_size > 4096:
+        raise RuntimeError("invalid service recovery metadata")
+    try:
+        intent = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("corrupt service recovery metadata") from exc
+    if (not isinstance(intent, dict) or intent.get("schema") != 1
+            or type(intent.get("previously_activated")) is not bool):
+        raise RuntimeError("invalid service recovery intent")
+    return intent
+
+
 def recover_install_transaction(paths: dict, state: Path) -> bool:
     pending = state / "core-install-pending"
     if pending.is_symlink():
@@ -249,6 +281,7 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
             or set(journal["old"]) != set(paths)
             or journal.get("targets") != {name: str(path) for name, path in paths.items()}):
         raise RuntimeError("mismatched recovery journal")
+    intent = _service_intent(pending)
     # Verify the entire snapshot before mutating anything.
     for name, path in paths.items():
         entry = journal["old"][name]
@@ -262,6 +295,12 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
                     (saved.is_dir() if entry["kind"] == "file" else not saved.is_dir()) or
                     _path_digest(saved) != entry.get("digest")):
                 raise RuntimeError("corrupt recovery snapshot: " + name)
+    # Fresh activation may have partially enabled services before interruption.
+    # Its intent marker is durably recorded before invoking systemctl.
+    if intent is not None and not intent["previously_activated"]:
+        _systemctl("disable", "--now",
+                   "appearance-studio-theme-monitor.service",
+                   "appearance-studio-system-monitor.service")
     # Replay-safe restoration: source snapshots remain until every target is restored.
     for name, path in reversed(list(paths.items())):
         entry = journal["old"][name]
@@ -274,6 +313,8 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
             shutil.copytree(saved, path, symlinks=True)
         else:
             shutil.copy2(saved, path)
+    if intent is not None:
+        _systemctl("daemon-reload")
     shutil.rmtree(pending)
     return True
 
@@ -371,7 +412,9 @@ exec python3 -m appearance_studio "$@"
                                or targets["wrapper"].is_symlink()
                                or not (targets["wrapper"].stat().st_mode & 0o111)
                                or targets["wrapper"].read_text(encoding="utf-8") != wrapper)
-            if not desired and not wrapper_changed and install_kind == "owned-update" and not ns.activate:
+            if (not desired and not wrapper_changed
+                    and install_kind == "owned-update"
+                    and (not ns.activate or previously_activated)):
                 print("Appearance Studio Core is already current; no files or receipt changed.")
                 return 0
             journal = begin_install_transaction(slots, recovery_state)
@@ -394,6 +437,19 @@ exec python3 -m appearance_studio "$@"
                     "activate_requested": bool(ns.activate or previously_activated),
                 }
                 atomic_text(manifest_path, json.dumps(receipt, indent=2)+"\n", 0o600)
+                changed_units = any(
+                    dst in (targets["service"], targets["system_monitor_service"])
+                    for _, dst, _ in desired)
+                if ns.activate or (previously_activated and changed_units):
+                    atomic_text(journal / "service-intent.json",
+                                json.dumps({"schema": 1,
+                                            "previously_activated": previously_activated})
+                                + "\n", 0o600)
+                    _systemctl("daemon-reload")
+                    if ns.activate and not previously_activated:
+                        _systemctl("enable", "--now",
+                                   "appearance-studio-theme-monitor.service",
+                                   "appearance-studio-system-monitor.service")
             except Exception as exc:
                 try:
                     recover_install_transaction(slots, recovery_state)
@@ -406,11 +462,6 @@ exec python3 -m appearance_studio "$@"
             if shutil.which("update-desktop-database"):
                 subprocess.run(["update-desktop-database", str(data/"applications")],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if ns.activate and shutil.which("systemctl"):
-                subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
-                subprocess.run(["systemctl", "--user", "enable", "--now",
-                                "appearance-studio-theme-monitor.service",
-                                "appearance-studio-system-monitor.service"], check=False)
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
