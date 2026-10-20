@@ -347,7 +347,7 @@ def main():
                 (SOURCE/"share/systemd/user/appearance-studio-theme-monitor.service", targets["service"], "file"),
                 (SOURCE/"share/systemd/user/appearance-studio-system-monitor.service", targets["system_monitor_service"], "file"),
             ])
-    wrapper='''#!/usr/bin/env bash
+            wrapper='''#!/usr/bin/env bash
 set -euo pipefail
 APP_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/appearance-studio"
 export APPEARANCE_STUDIO_ROOT="$APP_ROOT"
