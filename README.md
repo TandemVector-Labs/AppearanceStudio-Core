@@ -41,9 +41,11 @@ Recommended target:
 
 The command-line core remains useful when the optional graphical or panel dependencies are not installed.
 
-## Latest unsigned organization-branded Core source package
+## Official unsigned organization-branded Core prerelease
 
-The installable **Linux Core 0.9.0 release candidate** from public source commit [873c08232aba](https://github.com/TandemVector-Labs/AppearanceStudio-Core/commit/873c08232aba0ef8e780bc961a652b0ddf3a991c) is available as [AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip). It is not the unfinished Ultimate edition.
+**Official GitHub Release:** [Appearance Studio Core 0.9.0 RC1 — TandemVector-Labs](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.0-rc1-tandemvector). Download its [unsigned Linux Core ZIP](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.0-rc1-tandemvector/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip) and [SHA-256 checksum](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.0-rc1-tandemvector/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip.sha256). The same verified ZIP is also kept in [repository downloads](downloads/AppearanceStudio-Core-v0.9.0-rc1-TandemVector-unsigned.zip).
+
+The ZIP contains the **Linux Core 0.9.0 release candidate** from public source commit [873c08232aba](https://github.com/TandemVector-Labs/AppearanceStudio-Core/commit/873c08232aba0ef8e780bc961a652b0ddf3a991c); the release's verification workflow passed on 20 October 2026. It is **not** the unfinished Ultimate edition or a stable v1.0 release.
 
 **Publisher:** TandemVector-Labs (GitHub organization). **Original author:** Aliakbar Emadoddin (علی‌اکبر عمادالدین). **Code signing:** not applied; the checksum is an integrity check, not an author signature.
 
