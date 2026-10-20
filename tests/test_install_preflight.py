@@ -232,6 +232,100 @@ def run():
     else:
         print("INSTALL_ISOLATED_XDG_END_TO_END_SKIPPED_ROOT")
 
+    # Integration: failed service enable must not commit an installation receipt.
+    # systemctl is an isolated fake; no real daemon/service is contacted.
+    with tempfile.TemporaryDirectory(prefix="core-service-reject-") as td:
+        root = Path(td)
+        home = root / "home"
+        home.mkdir()
+        fakebin = root / "fakebin"
+        fakebin.mkdir()
+        systemctl = fakebin / "systemctl"
+        systemctl.write_text(
+            '#!/bin/sh\n'
+            'printf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n'
+            'if [ "$2" = enable ]; then exit 37; fi\n',
+            encoding="utf-8")
+        systemctl.chmod(0o755)
+        log = root / "service.log"
+        env = dict(os.environ)
+        env.update({
+            "HOME": str(home),
+            "XDG_DATA_HOME": str(root / "data"),
+            "XDG_CONFIG_HOME": str(root / "config"),
+            "XDG_STATE_HOME": str(root / "state"),
+            "PATH": str(fakebin) + os.pathsep + env.get("PATH", ""),
+            "CORE_TEST_SYSTEMCTL_LOG": str(log),
+        })
+        installed = subprocess.run([sys.executable, str(ROOT / "install.py")],
+                                   env=env, capture_output=True, text=True, timeout=30)
+        assert installed.returncode == 0, installed.stdout + installed.stderr
+        receipt = root / "state" / "appearance-studio" / "install-manifest.json"
+        saved = receipt.read_bytes()
+        rejected = subprocess.run([sys.executable, str(ROOT / "install.py"), "--activate"],
+                                  env=env, capture_output=True, text=True, timeout=30)
+        assert rejected.returncode != 0, rejected.stdout + rejected.stderr
+        assert "previous installation restored" in rejected.stderr
+        assert receipt.read_bytes() == saved
+        assert json.loads(receipt.read_text())["activate_requested"] is False
+        assert not (root / "state" / "appearance-studio" / "core-install-pending").exists()
+        assert (root / "data" / "appearance-studio" / "python" /
+                "appearance_studio" / "engine.py").is_file()
+        events = log.read_text(encoding="utf-8")
+        assert "enable --now" in events
+        assert "disable --now" in events
+        assert (root / "data" / "appearance-studio" / "packs" / "studio-default").is_dir()
+        print("CORE_FAILED_SERVICE_ACTIVATION_ROLLBACK_PASS")
+
+    # Simulate SIGKILL-like exit after a tree promotion, then invoke the CLI recovery.
+    with tempfile.TemporaryDirectory(prefix="core-crash-recovery-") as td:
+        root = Path(td)
+        home = root / "home"
+        home.mkdir()
+        env = dict(os.environ)
+        env.update({
+            "HOME": str(home),
+            "XDG_DATA_HOME": str(root / "data"),
+            "XDG_CONFIG_HOME": str(root / "config"),
+            "XDG_STATE_HOME": str(root / "state"),
+        })
+        command = [sys.executable, str(ROOT / "install.py")]
+        first = subprocess.run(command, env=env, capture_output=True, text=True, timeout=30)
+        assert first.returncode == 0, first.stdout + first.stderr
+        original_engine = root / "data" / "appearance-studio" / "python" / "appearance_studio" / "engine.py"
+        original_engine.write_bytes(original_engine.read_bytes() + b"\n# force-upgrade\n")
+        expected = original_engine.read_bytes()
+        receipt = root / "state" / "appearance-studio" / "install-manifest.json"
+        expected_receipt = receipt.read_bytes()
+        code = (
+            "import importlib.util, os, sys\n"
+            f"spec=importlib.util.spec_from_file_location('installer', {str(ROOT / 'install.py')!r})\n"
+            "module=importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "real=module.replace_tree\n"
+            "def crash(*args):\n"
+            "    real(*args)\n"
+            "    os._exit(43)\n"
+            "module.replace_tree=crash\n"
+            "sys.argv=['install.py']\n"
+            "module.main()\n"
+        )
+        crashed = subprocess.run([sys.executable, "-c", code], env=env,
+                                 capture_output=True, text=True, timeout=30)
+        assert crashed.returncode == 43, crashed.stdout + crashed.stderr
+        pending = root / "state" / "appearance-studio" / "core-install-pending"
+        assert pending.is_dir()
+        assert original_engine.read_bytes() != expected
+        blocked = subprocess.run(command, env=env, capture_output=True, text=True, timeout=30)
+        assert blocked.returncode != 0 and "Incomplete install" in blocked.stderr
+        recover = subprocess.run(command + ["--recover"], env=env,
+                                 capture_output=True, text=True, timeout=30)
+        assert recover.returncode == 0, recover.stdout + recover.stderr
+        assert original_engine.read_bytes() == expected
+        assert receipt.read_bytes() == expected_receipt
+        assert not pending.exists()
+        print("CORE_CRASH_INTERRUPTION_CLI_RECOVERY_PASS")
+
     print("INSTALL_OWNERSHIP_PREFLIGHT_PASS")
 
 
