@@ -96,6 +96,9 @@ def run():
         assert "already current" in upgraded.stdout or "preserved from existing installation" in upgraded.stdout
         new_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         assert new_receipt["activate_requested"] is True
+        assert original_receipt["version"] == "0.9.0"
+        assert new_receipt["version"] == "0.9.1"
+        assert (root / "data" / "appearance-studio" / "VERSION").read_text().strip() == "0.9.1"
         assert new_receipt["owned_paths"] == original_receipt["owned_paths"]
         assert log.read_text(encoding="utf-8") == initial_log
 
