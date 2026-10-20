@@ -113,6 +113,42 @@ def run():
         assert "disable --now appearance-studio-theme-monitor.service" in log.read_text()
         print("CORE_UNINSTALL_LOCK_PENDING_SYMLINK_SERVICE_SAFETY_PASS")
 
+        # An explicit purge must NOT unlink the lock inode under an active
+        # flock. Otherwise a concurrent installer may lock a replacement inode
+        # while uninstall is still removing files.
+        with tempfile.TemporaryDirectory(prefix="core-uninstall-purge-") as td2:
+            p = Path(td2)
+            h = p / "home"
+            h.mkdir()
+            purge_env = dict(env)
+            purge_env.update({
+                "HOME": str(h),
+                "XDG_DATA_HOME": str(p / "data"),
+                "XDG_CONFIG_HOME": str(p / "config"),
+                "XDG_STATE_HOME": str(p / "state"),
+            })
+            installed = execute("install.py", custom_env=purge_env)
+            assert installed.returncode == 0, installed.stdout + installed.stderr
+            lock_root = p / "state" / "appearance-studio"
+            purge_lock = lock_root / ".core-install.lock"
+            before_inode = purge_lock.stat().st_ino
+            (lock_root / "personal-note.txt").write_text("private", encoding="utf-8")
+            personal = p / "data" / "appearance-studio" / "packs" / "personal"
+            personal.mkdir(parents=True)
+            (personal / "asset.txt").write_bytes(b"personal")
+            purged = execute("uninstall.py", "--purge-user-data", custom_env=purge_env)
+            assert purged.returncode == 0, purged.stdout + purged.stderr
+            assert purge_lock.is_file() and purge_lock.stat().st_ino == before_inode
+            assert sorted(child.name for child in lock_root.iterdir()) == [".core-install.lock"]
+            assert not (p / "data" / "appearance-studio" / "VERSION").exists()
+            assert not personal.exists()
+            # A new install locks the same inode, rather than creating a
+            # second lock file at the same pathname.
+            reinstalled = execute("install.py", custom_env=purge_env)
+            assert reinstalled.returncode == 0, reinstalled.stdout + reinstalled.stderr
+            assert purge_lock.stat().st_ino == before_inode
+            print("CORE_EXPLICIT_PURGE_RETAINS_STABLE_LOCK_PASS")
+
 
 if __name__ == "__main__":
     run()
