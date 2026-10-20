@@ -11,6 +11,25 @@ def remove_owned(path):
     if path.is_dir() and not path.is_symlink():shutil.rmtree(path)
     else:path.unlink()
 
+def refuse_foreign_manager_units(expected: dict) -> None:
+    """Fail closed before stopping any similarly named non-Core service."""
+    for key in ("service", "system_monitor_service"):
+        path = expected[key]
+        try:
+            response = subprocess.run(
+                ["systemctl", "--user", "show", path.name,
+                 "--property=FragmentPath", "--value"],
+                capture_output=True, text=True, timeout=8)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise SystemExit("Unable to verify owned service manager units.") from exc
+        if response.returncode:
+            raise SystemExit("Unable to verify owned service manager units.")
+        fragment = response.stdout.strip()
+        if fragment and fragment != str(path):
+            raise SystemExit("Foreign user-manager unit collision: " + path.name +
+                             " would affect a different installation.")
+
+
 def main():
     ap=argparse.ArgumentParser(description="Uninstall Appearance Studio application files")
     ap.add_argument("--purge-user-data",action="store_true",help="Also remove Appearance Studio settings, state and user theme packs")
@@ -76,6 +95,7 @@ def main():
         if activated and not shutil.which("systemctl"):
             raise SystemExit("Cannot locate systemctl to stop activated owned services.")
         if activated:
+            refuse_foreign_manager_units(expected)
             completed=subprocess.run(["systemctl","--user","disable","--now",
                 "appearance-studio-theme-monitor.service",
                 "appearance-studio-system-monitor.service"],
