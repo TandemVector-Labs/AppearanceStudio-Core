@@ -75,6 +75,36 @@ For a non-mutating installation preview:
 python3 install.py --dry-run
 ```
 
+## Safe in-place Core upgrades and interruption recovery
+
+For an existing installation **owned by this Core installer**, extract the
+updated Core ZIP into a separate temporary source directory and run
+`python3 install.py` from that new source directory. It updates the *same*
+user-owned destinations and does not create a second application installation.
+Unchanged files and the ownership receipt are left untouched on a no-op update.
+User settings, state and additional personal Theme Packs remain outside
+the owned-file replacement. Do **not** use this installer to replace another
+customized Appearance Studio, MMZ Theme or Ultimate installation.
+
+If an update stops after a partial change, run the following from the
+**same version of Core source** that attempted the update, before trying again:
+
+```bash
+python3 install.py --recover
+```
+
+Recovery uses a bounded journal to restore the previously owned files. If the
+journal reports a collision, unexpected symlink, wrong location, or unresolved
+service cleanup, do not manually delete its files or reinstall over them:
+resolve the specific error without disturbing the existing desktop. A
+successfully committed update is not rolled back by later journal cleanup.
+
+`--activate` is optional and checks which unit files the **actual user
+systemd manager** loaded. If another installation owns either official Core
+service name, activation refuses the collision instead of enabling or
+disabling that other service. An update without `--activate` does not
+activate background services for the first time.
+
 ## Use
 
 Launch the graphical center:
