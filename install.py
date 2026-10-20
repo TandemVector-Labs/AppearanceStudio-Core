@@ -83,6 +83,12 @@ def replace_tree(source, target, backup_root):
 
 def preflight_owned_paths(targets, manifest_path):
     """Admit a fresh installation or an update owned by this Core installer."""
+    paths = {**targets, "install_manifest": manifest_path}
+    for name, path in paths.items():
+        if not path.is_absolute():
+            raise RuntimeError("XDG install path must be absolute: " + name)
+        if any(parent.is_symlink() for parent in path.parents):
+            raise RuntimeError("linked parent directory refused: " + name)
     linked = [name for name, path in targets.items() if path.is_symlink()]
     if linked:
         raise RuntimeError("linked install target refused: " + ", ".join(linked))
@@ -186,8 +192,11 @@ def begin_install_transaction(paths: dict, state: Path) -> Path:
     if preparing.is_symlink():
         raise RuntimeError("invalid incomplete preparation")
     if preparing.exists():
+        if not (preparing / "PREPARATION_MARKER").is_file():
+            raise RuntimeError("unrecognized transaction staging; refusing removal")
         shutil.rmtree(preparing)  # incomplete staging: no writes happen before promotion
     preparing.mkdir(mode=0o700)
+    atomic_text(preparing / "PREPARATION_MARKER", "Appearance Studio Core staging\n", 0o600)
     try:
         preimages = preparing / "preimages"
         preimages.mkdir()
@@ -209,7 +218,9 @@ def begin_install_transaction(paths: dict, state: Path) -> Path:
                 raise RuntimeError("unsupported owned path: " + name)
             previous[name] = {"kind": kind, "digest": _path_digest(snapshot)}
         atomic_text(preparing / "journal.json",
-                    json.dumps({"schema": 1, "old": previous}, sort_keys=True) + "\n",
+                    json.dumps({"schema": 1, "old": previous,
+                                "targets": {name: str(path) for name, path in paths.items()}},
+                               sort_keys=True) + "\n",
                     0o600)
         os.replace(preparing, pending)
         return pending
@@ -235,7 +246,8 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
     journal = json.loads(journal_file.read_text(encoding="utf-8"))
     if (not isinstance(journal, dict) or journal.get("schema") != 1
             or not isinstance(journal.get("old"), dict)
-            or set(journal["old"]) != set(paths)):
+            or set(journal["old"]) != set(paths)
+            or journal.get("targets") != {name: str(path) for name, path in paths.items()}):
         raise RuntimeError("mismatched recovery journal")
     # Verify the entire snapshot before mutating anything.
     for name, path in paths.items():
@@ -355,8 +367,10 @@ export PYTHONPATH="$APP_ROOT/python${PYTHONPATH:+:$PYTHONPATH}"
 exec python3 -m appearance_studio "$@"
 '''
             desired = [(src, dst, kind) for src, dst, kind in sources if not _same_content(src, dst)]
-            wrapper_changed = not targets["wrapper"].is_file() or (
-                targets["wrapper"].read_text(encoding="utf-8") != wrapper)
+            wrapper_changed = (not targets["wrapper"].is_file()
+                               or targets["wrapper"].is_symlink()
+                               or not (targets["wrapper"].stat().st_mode & 0o111)
+                               or targets["wrapper"].read_text(encoding="utf-8") != wrapper)
             if not desired and not wrapper_changed and install_kind == "owned-update" and not ns.activate:
                 print("Appearance Studio Core is already current; no files or receipt changed.")
                 return 0
