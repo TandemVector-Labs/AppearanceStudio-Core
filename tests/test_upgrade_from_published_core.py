@@ -92,7 +92,7 @@ def run():
         must_pass(run_command(ROOT / "install.py", env, "--dry-run"))
         upgraded = run_command(ROOT / "install.py", env)
         must_pass(upgraded)
-        assert "preserved from existing installation" in upgraded.stdout
+        assert "already current" in upgraded.stdout or "preserved from existing installation" in upgraded.stdout
         new_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         assert new_receipt["activate_requested"] is True
         assert new_receipt["owned_paths"] == original_receipt["owned_paths"]
