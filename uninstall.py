@@ -96,7 +96,12 @@ def main():
         for path in paths:remove_owned(path)
         if ns.purge_user_data:
             remove_owned(config/"appearance-studio")
-            remove_owned(state/"appearance-studio")
+            # Keep the open lock inode and its parent stable until lock release.
+            # Removing this directory while flock() is held lets a concurrent
+            # installer create and lock a different inode at the same path.
+            for child in sorted(recovery_root.iterdir()):
+                if child != lock:
+                    remove_owned(child)
             remove_owned(data/"appearance-studio/packs")
         else:
             remove_owned(manifest_path)
