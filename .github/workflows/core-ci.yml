@@ -32,3 +32,14 @@ jobs:
           path: ${{ runner.temp }}/appearance-core-candidate/
           if-no-files-found: error
           retention-days: 7
+  gtk-broadway-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GTK4 Broadway smoke-test prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libgtk-4-bin
+      - name: Construct and render UI on isolated localhost Broadway
+        run: /usr/bin/python3 -B tests/test_ui_broadway.py
