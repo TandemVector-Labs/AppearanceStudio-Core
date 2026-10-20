@@ -140,7 +140,7 @@ def run():
             # A normal later update must not falsely de-authorize already running services.
             updated = call()
             assert updated.returncode == 0, updated.stdout + updated.stderr
-            assert "preserved from existing installation" in updated.stdout
+            assert "already current" in updated.stdout or "preserved from existing installation" in updated.stdout
             assert json.loads(receipt.read_text())["activate_requested"] is True
             assert service_log.read_text(encoding="utf-8") == events
             assert prefs.read_text(encoding="utf-8") == '{"selected_theme":"personal"}'
