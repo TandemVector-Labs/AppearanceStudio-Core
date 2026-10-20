@@ -287,8 +287,8 @@ def recover_install_transaction(paths: dict, state: Path) -> bool:
         entry = journal["old"][name]
         if not isinstance(entry, dict) or entry.get("kind") not in ("file", "dir", "absent"):
             raise RuntimeError("invalid preimage metadata: " + name)
-        if path.is_symlink():
-            raise RuntimeError("linked owned target blocks recovery: " + name)
+        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+            raise RuntimeError("linked owned target or parent blocks recovery: " + name)
         if entry["kind"] != "absent":
             saved = pending / "preimages" / name
             if (saved.is_symlink() or
