@@ -59,6 +59,7 @@ def run():
         fake = fakebin / "systemctl"
         fake.write_text(
             '#!/bin/sh\n'
+            'if [ "$2" = show ]; then exit 0; fi\n'
             'echo "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n',
             encoding="utf-8")
         fake.chmod(0o755)
