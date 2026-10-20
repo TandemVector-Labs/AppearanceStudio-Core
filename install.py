@@ -80,6 +80,35 @@ def replace_tree(source, target, backup_root):
         elif not original_moved and hold.exists():
             hold.rmdir()
 
+def preflight_owned_paths(targets, manifest_path):
+    """Admit a fresh installation or an update owned by this Core installer."""
+    linked = [name for name, path in targets.items() if path.is_symlink()]
+    if linked:
+        raise RuntimeError("linked install target refused: " + ", ".join(linked))
+    if manifest_path.is_symlink():
+        raise RuntimeError("linked install manifest refused")
+    occupied = [name for name, path in targets.items() if path.exists()]
+    if not manifest_path.exists():
+        if occupied:
+            raise RuntimeError("existing unowned install targets: " + ", ".join(occupied))
+        return "fresh"
+    if not manifest_path.is_file() or manifest_path.stat().st_size > 32768:
+        raise RuntimeError("invalid existing install manifest")
+    try:
+        receipt = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("invalid existing install manifest") from exc
+    expected = {name: str(path) for name, path in targets.items()}
+    if (not isinstance(receipt, dict) or receipt.get("schema") != 1
+            or receipt.get("owned_paths") != expected):
+        raise RuntimeError("existing install is not owned by this Core installer")
+    version_file = targets["version"]
+    recorded_version = receipt.get("version")
+    if (not isinstance(recorded_version, str) or not version_file.is_file()
+            or version_file.read_text(encoding="utf-8").strip() != recorded_version):
+        raise RuntimeError("existing Core version does not match its install receipt")
+    return "owned-update"
+
 def main():
     ap=argparse.ArgumentParser(description="Install Appearance Studio for the current user")
     ap.add_argument("--activate",action="store_true",help="Enable the Light/Dark monitor after installation")
@@ -108,6 +137,10 @@ def main():
         "service":unit,
         "system_monitor_service":system_unit,
     }
+    try:
+        preflight_owned_paths(targets, state/"appearance-studio/install-manifest.json")
+    except RuntimeError as exc:
+        raise SystemExit("Refusing unsafe installation: " + str(exc)) from exc
     if ns.dry_run:
         print(json.dumps({k:str(v) for k,v in targets.items()},indent=2))
         return 0
