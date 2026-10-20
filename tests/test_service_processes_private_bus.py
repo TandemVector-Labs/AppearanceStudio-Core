@@ -39,30 +39,37 @@ def run() -> None:
             "APPEARANCE_STUDIO_ROOT": str(ROOT / "share" / "appearance-studio"),
             "PYTHONPATH": str(ROOT / "src"),
         })
+        # The private bus must outlive the monitor being stopped.
+        # Killing the entire process group first terminates dbus-daemon
+        # before dbus-python can release BusName on normal SIGTERM.
+        controlled_stop = r'''
+import subprocess,sys,time
+name=sys.argv[1]
+child=subprocess.Popen(
+    [sys.executable,"-B","-m","appearance_studio",name],
+    stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+try:
+    time.sleep(1.0)
+    assert child.poll() is None, f"{name} exited prematurely"
+finally:
+    if child.poll() is None:
+        child.terminate()
+    output,errors=child.communicate(timeout=4)
+assert "Traceback" not in errors, errors
+if name=="system-monitor":
+    assert "APPEARANCE_STUDIO_MONITOR_READY" in output, output
+print("PRIVATE_DBUS_"+name.upper().replace("-","_")+"_STARTUP_PASS")
+'''
         for name in ("monitor", "system-monitor"):
-            proc = subprocess.Popen(
+            proc = subprocess.run(
                 ["dbus-run-session", "--", sys.executable, "-B",
-                 "-m", "appearance_studio", name],
+                 "-c", controlled_stop, name],
                 cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                text=True, start_new_session=True,
+                capture_output=True, text=True, timeout=9,
             )
-            try:
-                time.sleep(1.0)
-                assert proc.poll() is None, (
-                    f"{name} exited prematurely: {proc.returncode}\n"
-                    + (proc.stderr.read() if proc.stderr else "")
-                )
-            finally:
-                if proc.poll() is None:
-                    os.killpg(proc.pid, signal.SIGTERM)
-                try:
-                    output, errors = proc.communicate(timeout=4)
-                except subprocess.TimeoutExpired:
-                    os.killpg(proc.pid, signal.SIGKILL)
-                    output, errors = proc.communicate(timeout=3)
-                    raise AssertionError(f"{name} did not terminate")
-            assert "Traceback" not in errors, errors
+            assert proc.returncode == 0, proc.stdout + proc.stderr
+            assert "Traceback" not in proc.stderr, proc.stderr
+            assert "PRIVATE_DBUS_" + name.upper().replace("-", "_") + "_STARTUP_PASS" in proc.stdout
             print("PRIVATE_DBUS_" + name.upper().replace("-", "_") + "_STARTUP_PASS")
         assert not (root / "config" / "dconf").exists()
         print("PRIVATE_DBUS_MONITOR_PROCESS_LIVENESS_PASS")
