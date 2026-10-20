@@ -220,8 +220,9 @@ def run():
             except RuntimeError as exc:
                 assert "mismatched recovery journal" in str(exc)
             assert foreign_target.read_text(encoding="utf-8") == "do-not-touch"
-            recovered = installer.recover_install_transaction(owned_slots, state_root)
-            assert recovered is True
+            recovery_run = call("--recover")
+            assert recovery_run.returncode == 0, recovery_run.stdout + recovery_run.stderr
+            assert "restored previous owned installation" in recovery_run.stdout
             assert original_engine.read_bytes() == prior_engine
             assert receipt.read_bytes() == prior_receipt
             assert installer.recover_install_transaction(owned_slots, state_root) is False
