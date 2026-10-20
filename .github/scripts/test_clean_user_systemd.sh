@@ -57,10 +57,12 @@ if ! sudo -u "$tester" -H env "XDG_RUNTIME_DIR=$runtime" \
   echo "Dedicated user manager could not start dbus.socket" >&2
 fi
 for _ in $(seq 1 40); do
-  [[ -S "$runtime/bus" ]] && break
+  # The 0700 runtime directory cannot be traversed by the runner user.
+  # Inspect the socket as its actual owner; NEVER loosen runtime permissions.
+  sudo -u "$tester" -H test -S "$runtime/bus" && break
   sleep .25
 done
-if [[ ! -S "$runtime/bus" ]]; then
+if ! sudo -u "$tester" -H test -S "$runtime/bus"; then
   echo "Dedicated user bus not running" >&2
   sudo systemctl status "user@$uid.service" --no-pager --full || :
   sudo -u "$tester" -H env "XDG_RUNTIME_DIR=$runtime" \
