@@ -130,7 +130,7 @@ def run():
             fakebin = root / "fakebin"
             fakebin.mkdir()
             sysctl = fakebin / "systemctl"
-            sysctl.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n',
+            sysctl.write_text('#!/bin/sh\nif [ "$2" = show ]; then exit 0; fi\nprintf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n',
                               encoding="utf-8")
             sysctl.chmod(0o755)
             service_log = root / "systemctl.log"
@@ -307,6 +307,7 @@ def run():
         systemctl = fakebin / "systemctl"
         systemctl.write_text(
             '#!/bin/sh\n'
+            'if [ "$2" = show ]; then exit 0; fi\n'
             'printf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n'
             'if [ "$2" = enable ]; then exit 37; fi\n'
             'if [ "$2" = disable ] && [ "$CORE_TEST_FAIL_DISABLE" = 1 ]; then exit 39; fi\n',
