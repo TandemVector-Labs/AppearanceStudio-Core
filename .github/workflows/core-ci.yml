@@ -50,3 +50,22 @@ jobs:
         run: /usr/bin/python3 -B tests/test_gsettings_keyfile.py
       - name: Start and terminate both Core monitor processes on private D-Bus
         run: /usr/bin/python3 -B tests/test_service_processes_private_bus.py
+  clean-user-systemd:
+    # Privileged fixture creation is permitted only on a disposable GitHub VM
+    # and never for untrusted fork PR source; no owner machine is touched.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install headless Core monitor dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            python3-gi python3-dbus gir1.2-gtk-4.0 gir1.2-adw-1 \
+            gsettings-desktop-schemas dbus-user-session
+      - name: Exercise official Core units in a fresh real user manager
+        shell: bash
+        run: bash .github/scripts/test_clean_user_systemd.sh
