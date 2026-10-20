@@ -137,14 +137,21 @@ def main():
         "service":unit,
         "system_monitor_service":system_unit,
     }
+    manifest_path = state/"appearance-studio/install-manifest.json"
     try:
-        preflight_owned_paths(targets, state/"appearance-studio/install-manifest.json")
+        install_kind = preflight_owned_paths(targets, manifest_path)
     except RuntimeError as exc:
         raise SystemExit("Refusing unsafe installation: " + str(exc)) from exc
     if ns.dry_run:
         print(json.dumps({k:str(v) for k,v in targets.items()},indent=2))
         return 0
 
+    # An update without --activate must not lose an earlier explicit activation.
+    # Otherwise the uninstaller can leave the previously enabled services orphaned.
+    previously_activated = (
+        install_kind == "owned-update"
+        and json.loads(manifest_path.read_text(encoding="utf-8")).get("activate_requested") is True
+    )
     stamp=time.strftime("%Y%m%d-%H%M%S")
     backup_root=state/f"appearance-studio/install-backups/{stamp}"
     replace_tree(SOURCE/"src/appearance_studio",targets["python"]/"appearance_studio",backup_root/"python")
@@ -179,9 +186,8 @@ exec python3 -m appearance_studio "$@"
         "schema":1,"version":(SOURCE/"VERSION").read_text().strip(),"installed_at_unix":time.time(),
         "owned_paths":{k:str(v) for k,v in targets.items()},
         "preserve_on_uninstall":[str(config/"appearance-studio"),str(state/"appearance-studio"),str(app/"packs")],
-        "activate_requested":bool(ns.activate),
+        "activate_requested":bool(ns.activate or previously_activated),
     }
-    manifest_path=state/"appearance-studio/install-manifest.json"
     atomic_text(manifest_path,json.dumps(manifest,indent=2)+"\n",0o600)
 
     if shutil.which("update-desktop-database"):
@@ -191,7 +197,10 @@ exec python3 -m appearance_studio "$@"
         subprocess.run(["systemctl","--user","enable","--now","appearance-studio-theme-monitor.service","appearance-studio-system-monitor.service"],check=False)
 
     print("Appearance Studio installed for the current user.")
-    print("Monitor activation:", "requested" if ns.activate else "deferred (safe default)")
+    print("Monitor activation:",
+          "requested" if ns.activate else
+          "preserved from existing installation" if previously_activated else
+          "deferred (safe default)")
     return 0
 
 if __name__=="__main__":
