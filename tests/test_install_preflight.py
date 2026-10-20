@@ -257,7 +257,8 @@ def run():
         systemctl.write_text(
             '#!/bin/sh\n'
             'printf "%s\\n" "$*" >> "$CORE_TEST_SYSTEMCTL_LOG"\n'
-            'if [ "$2" = enable ]; then exit 37; fi\n',
+            'if [ "$2" = enable ]; then exit 37; fi\n'
+            'if [ "$2" = disable ] && [ "$CORE_TEST_FAIL_DISABLE" = 1 ]; then exit 39; fi\n',
             encoding="utf-8")
         systemctl.chmod(0o755)
         log = root / "service.log"
@@ -307,6 +308,13 @@ def run():
         pending = root / "state" / "appearance-studio" / "core-install-pending"
         assert (pending / "service-intent.json").is_file()
         log_before = log.read_text(encoding="utf-8")
+        env["CORE_TEST_FAIL_DISABLE"] = "1"
+        blocked = subprocess.run([sys.executable, str(ROOT / "install.py"), "--recover"],
+                                 env=env, capture_output=True, text=True, timeout=30)
+        assert blocked.returncode != 0
+        assert pending.exists() and (pending / "service-intent.json").is_file()
+        assert receipt.read_bytes() == saved
+        env.pop("CORE_TEST_FAIL_DISABLE")
         recovered = subprocess.run([sys.executable, str(ROOT / "install.py"), "--recover"],
                                    env=env, capture_output=True, text=True, timeout=30)
         assert recovered.returncode == 0, recovered.stdout + recovered.stderr
