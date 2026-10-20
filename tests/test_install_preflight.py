@@ -148,6 +148,70 @@ def run():
             assert private_state.read_text(encoding="utf-8") == "keep-state"
             assert (root / "data" / "appearance-studio" / "python" /
                     "appearance_studio" / "__init__.py").is_file()
+
+            # A byte-identical upgrade must not rewrite the receipt or produce
+            # the growing install-backups folders used by the previous installer.
+            manifest_bytes = receipt.read_bytes()
+            backup_root = root / "state" / "appearance-studio" / "install-backups"
+            backup_dirs_before = sorted(backup_root.iterdir()) if backup_root.exists() else []
+            must_pass = call()
+            assert must_pass.returncode == 0, must_pass.stdout + must_pass.stderr
+            assert "already current" in must_pass.stdout
+            assert receipt.read_bytes() == manifest_bytes
+            assert (sorted(backup_root.iterdir()) if backup_root.exists() else []) == backup_dirs_before
+            assert not (root / "state" / "appearance-studio" / "core-install-pending").exists()
+
+            # Fault-inject after a tree promotion, then require exact old bytes.
+            original_engine = root / "data" / "appearance-studio" / "python" / "appearance_studio" / "engine.py"
+            original_engine.write_bytes(original_engine.read_bytes() + b"\n# personal-core-adjustment\n")
+            prior_engine = original_engine.read_bytes()
+            prior_receipt = receipt.read_bytes()
+            original_replace = installer.replace_tree
+
+            def fail_after_promotion(source, target, backup_root):
+                original_replace(source, target, backup_root)
+                raise OSError("injected transaction failure after tree promotion")
+
+            installer.replace_tree = fail_after_promotion
+            try:
+                # main() runs in this process to monkeypatch a staging operation.
+                previous_argv = sys.argv
+                previous_env = dict(os.environ)
+                try:
+                    sys.argv = [str(ROOT / "install.py")]
+                    os.environ.update(env)
+                    try:
+                        installer.main()
+                        raise AssertionError("fault injection unexpectedly completed")
+                    except RuntimeError as exc:
+                        assert "previous installation restored" in str(exc)
+                finally:
+                    sys.argv = previous_argv
+                    os.environ.clear()
+                    os.environ.update(previous_env)
+            finally:
+                installer.replace_tree = original_replace
+            assert original_engine.read_bytes() == prior_engine
+            assert receipt.read_bytes() == prior_receipt
+            assert not (root / "state" / "appearance-studio" / "core-install-pending").exists()
+            assert prefs.read_text(encoding="utf-8") == '{"selected_theme":"personal"}'
+            assert extra.read_text(encoding="utf-8") == "keep-this-pack"
+
+            # Simulate an interrupted transaction and recover from the pinned
+            # preimage without touching settings or extra theme packs.
+            slots = json.loads(receipt.read_text(encoding="utf-8"))["owned_paths"]
+            owned_slots = {key: Path(value) for key, value in slots.items()}
+            owned_slots["install_manifest"] = receipt
+            state_root = root / "state" / "appearance-studio"
+            installer.begin_install_transaction(owned_slots, state_root)
+            original_engine.write_bytes(b"incomplete upgrade")
+            recovered = installer.recover_install_transaction(owned_slots, state_root)
+            assert recovered is True
+            assert original_engine.read_bytes() == prior_engine
+            assert receipt.read_bytes() == prior_receipt
+            assert installer.recover_install_transaction(owned_slots, state_root) is False
+            assert not (state_root / "core-install-pending").exists()
+        print("CORE_RECOVERABLE_TRANSACTION_PASS")
         print("INSTALL_ISOLATED_XDG_END_TO_END_PASS")
     else:
         print("INSTALL_ISOLATED_XDG_END_TO_END_SKIPPED_ROOT")
