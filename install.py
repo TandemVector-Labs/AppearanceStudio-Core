@@ -413,8 +413,7 @@ exec python3 -m appearance_studio "$@"
                                or not (targets["wrapper"].stat().st_mode & 0o111)
                                or targets["wrapper"].read_text(encoding="utf-8") != wrapper)
             if (not desired and not wrapper_changed
-                    and install_kind == "owned-update"
-                    and (not ns.activate or previously_activated)):
+                    and install_kind == "owned-update" and not ns.activate):
                 print("Appearance Studio Core is already current; no files or receipt changed.")
                 return 0
             journal = begin_install_transaction(slots, recovery_state)
@@ -446,7 +445,7 @@ exec python3 -m appearance_studio "$@"
                                             "previously_activated": previously_activated})
                                 + "\n", 0o600)
                     _systemctl("daemon-reload")
-                    if ns.activate and not previously_activated:
+                    if ns.activate:
                         _systemctl("enable", "--now",
                                    "appearance-studio-theme-monitor.service",
                                    "appearance-studio-system-monitor.service")
