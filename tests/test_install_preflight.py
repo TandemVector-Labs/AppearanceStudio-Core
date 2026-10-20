@@ -250,6 +250,47 @@ def run():
             assert receipt.read_bytes() == prior_receipt
             assert installer.recover_install_transaction(owned_slots, state_root) is False
             assert not (state_root / "core-install-pending").exists()
+
+            # A committed install is NOT a pending rollback. Simulate a crash
+            # after atomic rename but before completed journal cleanup.
+            committed_before = original_engine.read_bytes()
+            journal = installer.begin_install_transaction(owned_slots, state_root)
+            committed_bytes = committed_before + b"\n# verified committed content\n"
+            original_engine.write_bytes(committed_bytes)
+            installer.atomic_text(journal / "commit.complete", "committed\n", 0o600)
+            done = state_root / "core-install-completed"
+            os.replace(journal, done)
+            assert done.is_dir() and not journal.exists()
+            recovery = call("--recover")
+            assert recovery.returncode == 0, recovery.stdout + recovery.stderr
+            assert "nothing pending" in recovery.stdout
+            assert original_engine.read_bytes() == committed_bytes
+            assert not done.exists()
+            assert not journal.exists()
+
+            # An unexpected directory with the completed-journal name must
+            # not be recursively deleted even if a user supplies --recover.
+            done.mkdir()
+            foreign = done / "foreign-owner.txt"
+            foreign.write_text("leave-this-alone", encoding="utf-8")
+            blocked = call("--recover")
+            assert blocked.returncode != 0
+            assert foreign.read_text(encoding="utf-8") == "leave-this-alone"
+            foreign.unlink()
+            done.rmdir()
+
+            # Do not open a symlinked lock before checking destination safety.
+            lock = state_root / ".core-install.lock"
+            lock.unlink()
+            outside_lock = root / "external-lock.txt"
+            outside_lock.write_text("untouched", encoding="utf-8")
+            lock.symlink_to(outside_lock)
+            refused = call("--recover")
+            assert refused.returncode != 0
+            assert "Linked Core install lock" in refused.stderr
+            assert outside_lock.read_text(encoding="utf-8") == "untouched"
+            lock.unlink()
+        print("CORE_COMMITTED_JOURNAL_RECOVERY_AND_LOCK_SAFETY_PASS")
         print("CORE_RECOVERABLE_TRANSACTION_PASS")
         print("INSTALL_ISOLATED_XDG_END_TO_END_PASS")
     else:
