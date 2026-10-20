@@ -34,6 +34,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Verify exact main commit and historical release integrity
+        id: release_guard
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,6 +52,7 @@ jobs:
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = false; then
               echo "OFFICIAL_RC_RELEASE_ALREADY_PUBLISHED_UNCHANGED"
+              echo "publish=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "Existing draft requires inspection; refusing to replace" >&2
@@ -60,7 +62,9 @@ jobs:
             echo "Existing tag with no published release; refusing replacement" >&2
             exit 1
           fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
       - name: Reproducibly build and smoke-test source release ZIP
+        if: steps.release_guard.outputs.publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -69,6 +73,7 @@ jobs:
           cd "$RUNNER_TEMP/official-core-0.9.1"
           sha256sum -c AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip.sha256
       - name: Publish draft, verify downloaded bytes, then publish prerelease
+        if: steps.release_guard.outputs.publish == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
