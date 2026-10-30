@@ -1,5 +1,9 @@
 # Appearance Studio
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/TandemVector-Labs/.github/main/brand/social/AppearanceStudio-Core.png" alt="Appearance Studio Core visual project card" width="720">
+</p>
+
 Appearance Studio is a professional desktop appearance center for GNOME on Linux. It is designed around a portable core, verified Theme Packs, bounded desktop writes, transactional rollback, and independent monitoring services.
 
 **Original author: Aliakbar Emadoddin · نویسندهٔ اصلی: علی‌اکبر عمادالدین**
