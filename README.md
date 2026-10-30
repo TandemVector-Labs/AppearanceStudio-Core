@@ -47,12 +47,11 @@ The command-line core remains useful when the optional graphical or panel depend
 
 ## Appearance Studio Core 0.9.1 RC1 (unsigned)
 
-The next verified Core source release is **0.9.1 RC1**, tag
-[`v0.9.1-rc1-tandemvector`](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.1-rc1-tandemvector).
-Its versioned ZIP and adjacent `.sha256` checksum are published **only after all
-release-gated CI jobs succeed**. If that tag is not yet visible, no official
-0.9.1 download has been published; use the historical RC1 instead rather than
-an unverified build.
+**0.9.1 RC1 is published as an unsigned Linux Core prerelease**, not Stable:
+[official release and verification notes](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/tag/v0.9.1-rc1-tandemvector) ·
+[versioned Linux Core ZIP](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.1-rc1-tandemvector/AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip) ·
+[SHA-256 checksum](https://github.com/TandemVector-Labs/AppearanceStudio-Core/releases/download/v0.9.1-rc1-tandemvector/AppearanceStudio-Core-v0.9.1-rc1-TandemVector-unsigned.zip.sha256).
+Verify the asset against its published checksum before installation. The earlier **0.9.0 RC1** remains available below for historical reference; neither prerelease establishes GNOME 50 live acceptance or a shipped Windows product.
 
 The 0.9.1 update includes ownership-checked **in-place upgrade**, journal
 recovery via `python3 install.py --recover`, actual user-manager service-name
